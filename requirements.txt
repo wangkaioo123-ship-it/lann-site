@@ -1,0 +1,2 @@
+# lann-site 依赖（保持精简）
+requests>=2.31.0

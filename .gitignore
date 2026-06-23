@@ -1,0 +1,24 @@
+# 密钥与本地配置（绝不提交）
+.env
+.env.*
+!.env.example
+secrets/
+*.secret
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# 抽取出来的原始业务数据（含商务/财务敏感信息，不进 git）
+data/raw/
+data/staging/
+*.xlsx
+*.csv
+
+# 编辑器
+.vscode/
+.idea/
+.DS_Store
