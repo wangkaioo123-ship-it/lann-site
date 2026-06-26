@@ -20,10 +20,10 @@ REDIRECT_URI = "http://localhost:8765/callback"
 AUTHORIZE_URL = "https://accounts.feishu.cn/open-apis/authen/v1/authorize"
 TOKEN_URL = "https://open.feishu.cn/open-apis/authen/v2/oauth/token"
 
-# 需要向用户索取的权限：读云文档/电子表格/知识库（只读）
-# 注：offline_access(长期 refresh_token) 需管理员审批，暂不使用；token 有效期 2 小时，在窗口内跑完抽取即可。
-# 测算表既有独立电子表格(sheets)，也有 wiki 内嵌表(wiki)，故都带上。
-SCOPES = "drive:drive:readonly sheets:spreadsheet:readonly wiki:wiki:readonly"
+# 需要向用户索取的权限：读云文档/电子表格/知识库/文档正文（只读）
+# 注：offline_access(长期 refresh_token) 需管理员审批，暂不使用；token 有效期 2 小时。
+# docx:document:readonly 用于读会议纪要等飞书文档正文。
+SCOPES = "drive:drive:readonly sheets:spreadsheet:readonly wiki:wiki:readonly docx:document:readonly"
 
 TOKEN_FILE = settings.ROOT_DIR / "secrets" / "feishu_user_token.json"
 
