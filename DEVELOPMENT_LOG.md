@@ -15,6 +15,14 @@
 
 ---
 
+## 2026-07-08 新点位初筛/对标表第一版
+
+- 类型：功能/数据
+- 内容：新增候选项目初筛脚本，将扩展管理候选项目、选址调研报告结构化事实、现有门店经营基准分位数合并为 `candidate_screen.csv`。第一版优先用报告链接匹配，缺链接时用城市约束后的名称归一化匹配；输出预期营收、租金物业月成本、估算租售比、租售比风险、资料风险、初筛结论和下一步动作。对金额解析做了保护，避免把“6个月”等周期误当营收，并对小于 1000 的候选营收按万元暂估时标记口径提示。
+- 改动文件：scripts/build_candidate_screen.py；data/staging/candidate_screen.csv
+- commit：本提交
+- 验证方法：`python -m scripts.build_candidate_screen` 生成 236 行；`python -m compileall scripts/build_candidate_screen.py` 通过；抽查西岸梦中心、深圳湾万象城、成都 in99、温州印象城等边界样本。
+
 ## 2026-07-08 7月3日选址数据治理成果固化
 
 - 类型：文档/配置
