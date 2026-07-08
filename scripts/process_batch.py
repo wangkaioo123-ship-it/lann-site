@@ -23,6 +23,21 @@ TESSDATA = "C:/Users/王凯/lann-site/data/tessdata"
 DONE = {"L0002", "L0003", "L0005", "L0006"}
 
 
+def load_done_ids():
+    """已确认完成的点位不再重复 OCR；待补/待确认点位允许用新 inventory 继续跑。"""
+    done = set(DONE)
+    path = Path("data/staging/rent_extract.csv")
+    if not path.exists():
+        return done
+    with path.open(encoding="utf-8-sig", newline="") as f:
+        for row in csv.DictReader(f):
+            site_id = (row.get("点位ID") or "").strip()
+            status = (row.get("状态") or "").strip()
+            if site_id and status in {"当年已定", "历史已终止"}:
+                done.add(site_id)
+    return done
+
+
 def ocr_png(png):
     r = subprocess.run([TESS, str(png), "stdout", "-l", "chi_sim+eng", "--tessdata-dir", TESSDATA],
                        capture_output=True, text=True, encoding="utf-8", errors="ignore")
@@ -31,7 +46,7 @@ def ocr_png(png):
 
 def main():
     with open("data/staging/base_table.csv", encoding="utf-8-sig") as f:
-        operating = {x["点位ID"] for x in csv.DictReader(f) if x["门店状态"] == "运营中"}
+        site_ids = {x["点位ID"] for x in csv.DictReader(f) if x.get("点位ID")}
     inv = json.loads(Path("data/contracts/inventory.json").read_text(encoding="utf-8"))
     by_l = defaultdict(list)
     for proj, info in inv.items():
@@ -46,8 +61,9 @@ def main():
     ocr_dir = Path("data/contracts/ocr"); ocr_dir.mkdir(parents=True, exist_ok=True)
     tmp = Path("data/contracts/_pdftmp"); tmp.mkdir(parents=True, exist_ok=True)
 
-    targets = sorted(L for L in by_l if L in operating and L not in DONE)
-    print(f"待处理运营中店：{len(targets)}")
+    done_ids = load_done_ids()
+    targets = sorted(L for L in by_l if L in site_ids and L not in done_ids)
+    print(f"待处理点位：{len(targets)}")
     done_files = 0
     for L in targets:
         for name, tok in by_l[L]:

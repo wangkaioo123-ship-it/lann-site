@@ -21,3 +21,7 @@ data/
 .vscode/
 .idea/
 .DS_Store
+
+# 本机工具配置 / 外部导出资料
+.claude/
+export/

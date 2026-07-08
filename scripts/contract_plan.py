@@ -12,11 +12,18 @@ from pathlib import Path
 INV = Path("data/contracts/inventory.json")
 
 # 租赁类文件关键词（保留）；无关件关键词（剔除）
-KEEP = ["合同", "续租", "续签", "补充协议", "租赁", "备忘"]
-DROP = ["证照", "营业执照", "测算", "投资", "立项", "借款", "收益权", "收条", "预算"]
+# 注意："合同"、"补充协议"本身太宽，会误命中采购/装修/加盟合同。
+KEEP = ["租赁", "租房", "房屋租赁", "商铺租赁", "店铺租赁", "续租", "续签"]
+DROP = [
+    "证照", "营业执照", "测算", "投资", "立项", "借款", "收益权", "收条", "预算",
+    "采购", "装修", "设计咨询", "委托管理", "培训", "特许经营", "商业特许",
+    "托管", "加盟", "结算", "施工", "图纸", "宿舍",
+]
 
 
 def is_rent_file(name):
+    if not name.lower().endswith(".pdf"):
+        return False
     if any(d in name for d in DROP):
         return False
     return any(k in name for k in KEEP)

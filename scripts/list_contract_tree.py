@@ -11,7 +11,7 @@ from services import feishu_client, feishu_oauth
 
 ROOT = "TwwHfx1FqlvcJOdbfCXcThh9n0f"  # 1-门店合约档案
 
-inventory = {}  # 项目名 → {folder_token, files:[{name,token}]}
+inventory = {}  # 完整路径 → {folder_token, files:[{name,token}]}
 
 
 def walk(folder_token, token, path):
@@ -21,14 +21,16 @@ def walk(folder_token, token, path):
     # 含文件的文件夹 = 一个项目
     if files:
         name = path[-1] if path else "(根)"
-        inventory[name] = {
+        key = " / ".join(path) if path else name
+        inventory[key] = {
+            "name": name,
             "folder_token": folder_token,
             "path": " / ".join(path),
             "files": [{"name": f["name"], "token": f["token"]} for f in files],
         }
-        print(f"{'  ' * len(path)}📁 {name}  ({len(files)} 文件)")
+        print(f"{'  ' * len(path)}[DIR] {name}  ({len(files)} 文件)")
     for sf in subfolders:
-        print(f"{'  ' * len(path)}├─ {sf['name']}")
+        print(f"{'  ' * len(path)}+- {sf['name']}")
         walk(sf["token"], token, path + [sf["name"]])
 
 
@@ -38,7 +40,7 @@ def main():
     walk(ROOT, token, [])
     out = Path("data/contracts/inventory.json")
     out.write_text(json.dumps(inventory, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"\n共 {len(inventory)} 个项目（含合同文件的文件夹）。清单已存：{out}")
+    print(f"\n共 {len(inventory)} 个含文件的文件夹。清单已存：{out}")
 
 
 if __name__ == "__main__":
