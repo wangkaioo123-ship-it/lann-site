@@ -15,6 +15,14 @@
 
 ---
 
+## 2026-07-08 新点位初筛归因分析飞书文档生成
+
+- 类型：功能/文档
+- 内容：新增飞书文档生成脚本，读取 `candidate_screen.csv` 汇总初筛结论、调研报告匹配、资料风险 Top 分布、重点样本和下一步资料治理建议，并调用飞书 docx API 新建文档写入正文。
+- 改动文件：scripts/create_candidate_analysis_doc.py
+- commit：本提交
+- 验证方法：`python -m compileall scripts/create_candidate_analysis_doc.py` 通过；已成功生成飞书文档 `https://lann.feishu.cn/docx/WW8Id8exFoQVmOx3MMNceXFgncb`。
+
 ## 2026-07-08 新点位初筛/对标表第一版
 
 - 类型：功能/数据
