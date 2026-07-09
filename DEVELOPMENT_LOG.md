@@ -15,6 +15,14 @@
 
 ---
 
+## 2026-07-09 连锁经营部 AI 矩阵与第一阶段前置工作启动
+
+- 类型：文档/方案
+- 内容：基于王凯确认的连锁经营部 AI 化方向，新增 AI 矩阵 v0.1、第一阶段工作计划、AI 任务清单和模型可插拔前置规范。明确飞书是入口，`lann-site` 是分析判断层，`lann-dashboard` 是展示推进层，工作OS 是判断源沉淀层；外部新闻、点评、小红书、地图、热点等数据归口为 `lann-site` 的外部选址情报层。第一阶段目标定义为让 AI 稳定回答“这件事是什么、关联哪个业务对象、资料是否足够、下一步该补什么、是否值得王凯看”。同时建立 `ai/` 工程骨架，为 `site_candidate_screen` 和 `external_site_intel` 两个任务新增任务定义、输出 schema 和 eval 样本说明。
+- 改动文件：docs/AI_MATRIX_V0.1.md；docs/AI_PHASE1_WORKPLAN_V0.1.md；docs/AI_TASKS_V0.1.md；docs/AI_MODEL_PORTABILITY_V0.1.md；ai/tasks/site_candidate_screen.json；ai/tasks/external_site_intel.json；ai/schemas/site_candidate_screen.output.schema.json；ai/schemas/external_site_intel.output.schema.json；ai/evals/site_candidate_screen/README.md；ai/evals/external_site_intel/README.md；DECISIONS.md
+- commit：本提交
+- 验证方法：已完成人工方案拆解；`ai/` 下 JSON 任务定义和 schema 均通过 `ConvertFrom-Json` 校验；后续按文档逐项推进更多任务 schema、eval 样本和三项目数据契约。
+
 ## 2026-07-08 新点位初筛归因分析飞书文档生成
 
 - 类型：功能/文档

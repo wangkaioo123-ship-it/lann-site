@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "external_site_intel output",
+  "type": "object",
+  "required": [
+    "candidate_name",
+    "city",
+    "data_sources",
+    "opportunities",
+    "risks",
+    "confidence",
+    "source_refs"
+  ],
+  "properties": {
+    "candidate_name": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "geo": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    },
+    "poi_summary": {
+      "type": "object",
+      "properties": {
+        "competitor_count_1_5km": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "mall_count_3km": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "office_signal": {
+          "type": "string"
+        },
+        "residential_signal": {
+          "type": "string"
+        },
+        "transport_signal": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "news_summary": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reputation_summary": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "点评、小红书、抖音等人工样本或授权来源的摘要。"
+    },
+    "trend_summary": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "opportunities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "data_sources": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "地图POI",
+          "新闻",
+          "商场官方",
+          "点评人工样本",
+          "小红书人工样本",
+          "抖音人工样本",
+          "趋势指数",
+          "其他"
+        ]
+      }
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "高",
+        "中",
+        "低"
+      ]
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "collected_at": {
+      "type": "string",
+      "description": "ISO date or datetime."
+    }
+  },
+  "additionalProperties": false
+}

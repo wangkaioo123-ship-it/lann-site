@@ -1,0 +1,22 @@
+{
+  "task_id": "external_site_intel",
+  "task_name": "外部选址情报摘要",
+  "owner_project": "lann-site",
+  "purpose": "围绕候选点位收集外部信号，补充商圈、竞品、交通、客群、新闻和热点风险，为选址分析AI提供外部证据。",
+  "current_implementation": null,
+  "input_sources": [
+    "候选项目名称",
+    "城市",
+    "地址/商场地点",
+    "可选经纬度",
+    "人工提供的点评/小红书/新闻链接样本"
+  ],
+  "output_schema": "ai/schemas/external_site_intel.output.schema.json",
+  "prompt_version": null,
+  "default_model": null,
+  "fallback_model": null,
+  "permission_level": "L1_read + L2_generate",
+  "eval_dataset": "ai/evals/external_site_intel",
+  "status": "designed_not_implemented",
+  "last_reviewed_at": "2026-07-09"
+}

@@ -1,0 +1,23 @@
+{
+  "task_id": "site_candidate_screen",
+  "task_name": "候选点位初筛",
+  "owner_project": "lann-site",
+  "purpose": "判断候选点位资料是否足够进入复核，并给出初筛结论、资料缺口、租售比风险和下一步动作。",
+  "current_implementation": {
+    "script": "scripts/build_candidate_screen.py",
+    "output": "data/staging/candidate_screen.csv"
+  },
+  "input_sources": [
+    "data/staging/expansion_candidates.csv",
+    "data/staging/site_survey_facts.csv",
+    "data/staging/site_benchmark_stats.csv"
+  ],
+  "output_schema": "ai/schemas/site_candidate_screen.output.schema.json",
+  "prompt_version": null,
+  "default_model": null,
+  "fallback_model": null,
+  "permission_level": "L1_read + L2_generate",
+  "eval_dataset": "ai/evals/site_candidate_screen",
+  "status": "existing_script_needs_schema_eval",
+  "last_reviewed_at": "2026-07-09"
+}

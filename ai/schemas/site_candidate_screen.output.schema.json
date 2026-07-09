@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "site_candidate_screen output",
+  "type": "object",
+  "required": [
+    "candidate_id",
+    "candidate_name",
+    "conclusion",
+    "missing_fields",
+    "risk_flags",
+    "next_actions",
+    "source_refs"
+  ],
+  "properties": {
+    "candidate_id": {
+      "type": "string",
+      "description": "候选项目记录ID或业务ID。"
+    },
+    "candidate_name": {
+      "type": "string",
+      "description": "候选项目名称。"
+    },
+    "city": {
+      "type": "string"
+    },
+    "conclusion": {
+      "type": "string",
+      "enum": [
+        "可进入复核",
+        "可跟进但需补资料",
+        "待补资料",
+        "谨慎",
+        "不建议"
+      ]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "高",
+        "中",
+        "低"
+      ]
+    },
+    "rent_to_sales_ratio": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "估算租售比，无法计算时为 null。"
+    },
+    "revenue_monthly": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "采用的预期月营业额，单位元/月。"
+    },
+    "rent_monthly": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "采用的月租金/物业成本，单位元/月。"
+    },
+    "key_evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "missing_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risk_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "similar_samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "site_name",
+          "reason"
+        ],
+        "properties": {
+          "site_name": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "输入文件、飞书链接、报告链接或数据来源。"
+    }
+  },
+  "additionalProperties": false
+}
