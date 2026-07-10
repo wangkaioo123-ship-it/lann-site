@@ -15,6 +15,14 @@
 
 ---
 
+## 2026-07-10 新建 lann-work-bot 承载飞书机器人事项编排
+
+- 类型：功能/架构
+- 内容：按王凯确认，新建独立项目 `C:\Users\王凯\lann-work-bot` 承载飞书机器人事项编排，不直接在旧 `Lann-bot-backup-20260525` 上继续开发。第一版实现飞书 webhook、source_packet 本地落盘、“开始编排”触发、读取 `lann-site` / `lann-dashboard` / 工作OS 状态文件和规则型事项编排输出；`lann-site` 的 `DEVELOPMENT_LOG.md`、`DECISIONS.md`、`docs/AI_*.md`、`ai/tasks/*.json` 已作为状态源接入。
+- 改动文件：docs/FEISHU_BOT_WORK_ORCHESTRATION_V0.1.md；新项目 `C:\Users\王凯\lann-work-bot`
+- commit：本提交
+- 验证方法：在 `lann-work-bot` 中执行 `npm.cmd run check` 通过；`npm.cmd install` 完成，0 vulnerabilities。
+
 ## 2026-07-10 飞书机器人事项编排项目方案
 
 - 类型：文档/方案

@@ -6,6 +6,8 @@
 
 项目名称：飞书机器人事项编排
 
+承载项目：`C:\Users\王凯\lann-work-bot`
+
 定位：
 
 - 飞书机器人是日常 AI 入口。
@@ -197,7 +199,7 @@ work_item_orchestration
 
 读取：
 
-- `AI_STATUS.md`，待补。
+- `AI_STATUS.md`，如存在。
 - `DEVELOPMENT_LOG.md`
 - `DECISIONS.md`
 - `docs/AI_*.md`
@@ -251,3 +253,9 @@ work_item_orchestration
 4. 提供 `lann-dashboard` 本地路径。
 5. 提供 dashboard 项目的状态文件命名习惯，如与 `AI_STATUS.md / DEVELOPMENT_LOG.md / DECISIONS.md` 不同。
 
+## 九、当前实现进展
+
+- 已新建 `C:\Users\王凯\lann-work-bot` 作为干净承载项目。
+- 已实现第一版 webhook、source_packet 本地落盘、“开始编排”触发、项目状态读取和规则型事项编排输出。
+- 已接入 `lann-site` 的 `DEVELOPMENT_LOG.md`、`DECISIONS.md`、`docs/AI_*.md`、`ai/tasks/*.json` 作为项目状态源。
+- dashboard 和工作OS 路径通过 `.env` 配置。
