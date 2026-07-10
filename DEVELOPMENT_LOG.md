@@ -15,6 +15,14 @@
 
 ---
 
+## 2026-07-10 飞书机器人事项编排项目方案
+
+- 类型：文档/方案
+- 内容：将事项编排入口从飞书文档/本地 inbox/CMD 粘贴调整为飞书机器人消息流。新增飞书机器人事项编排项目方案、`feishu_bot_inbox_ingest` 标准任务、`source_packet` schema 和 eval 样本说明；更新 AI 任务清单和第一阶段工作计划。默认每日 21:30 由机器人提醒王凯同步资料，王凯发送“开始编排”后输出今日事项编排到同一机器人会话。
+- 改动文件：docs/FEISHU_BOT_WORK_ORCHESTRATION_V0.1.md；docs/AI_TASKS_V0.1.md；docs/AI_PHASE1_WORKPLAN_V0.1.md；ai/tasks/feishu_bot_inbox_ingest.json；ai/schemas/source_packet.schema.json；ai/evals/feishu_bot_inbox_ingest/README.md；DECISIONS.md
+- commit：本提交
+- 验证方法：待提交前校验 `ai/` 下 JSON 文件可被正常解析。
+
 ## 2026-07-10 事项编排任务设为第一阶段最高优先级
 
 - 类型：文档/方案

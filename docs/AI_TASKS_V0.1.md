@@ -6,6 +6,7 @@
 
 | 任务ID | 中文名称 | 归属项目 | 当前状态 |
 |---|---|---|---|
+| `feishu_bot_inbox_ingest` | 飞书机器人收件箱摄取 | 跨项目/工作OS | 待实现 |
 | `work_item_orchestration` | 事项编排 | 跨项目/工作OS | 最高优先级，先轻量化 |
 | `meeting_recap_extract` | 会议复盘提取 | 工作OS | 待设计 |
 | `decision_source_distill` | 判断源候选提取 | 工作OS | 已有规则，待标准化 |
@@ -16,7 +17,37 @@
 | `dashboard_insight_summary` | dashboard 洞察摘要 | lann-dashboard | 待设计 |
 | `executive_decision_brief` | 王凯参谋简报 | 跨项目 | 待设计 |
 
-## 1. work_item_orchestration
+## 1. feishu_bot_inbox_ingest
+
+目的：从飞书机器人会话读取王凯显式发来的文字、截图、语音、链接和转发消息，生成原始资料包 `source_packet`。
+
+输入：
+
+- 飞书机器人消息。
+- 飞书妙记链接。
+- 飞书云文档链接。
+- 微信截图。
+- 语音说明。
+- 飞书转发消息。
+- 电话/想法补录。
+
+输出：
+
+- 资料类型。
+- 来源通道。
+- 时间。
+- 原始链接/附件引用。
+- 文本或语音转写。
+- 简要摘要。
+- 关联对象。
+- 关联项目。
+- 是否需要展开读取。
+
+权限级别：L1 只读 + L2 生成；不自动全量监听所有飞书聊天。
+
+当前状态：待实现。作为 `work_item_orchestration` 的前置入口。
+
+## 2. work_item_orchestration
 
 目的：把飞书待办、会议结论、项目日志、工作OS候选和日常沟通事项编排成“今日应该如何处理”的关系视图。
 
@@ -46,7 +77,7 @@
 
 评测样本来源：王凯每日待办、飞书会议结论、候选点位资料缺口、dashboard 项目状态、工作OS判断源候选。
 
-## 2. meeting_recap_extract
+## 3. meeting_recap_extract
 
 目的：把会议纪要、飞书妙记、会后补充内容转成可执行复盘。
 
@@ -72,7 +103,7 @@
 
 评测样本来源：历史会议纪要、飞书妙记、CEO 对齐会议、选址复盘会议。
 
-## 3. decision_source_distill
+## 4. decision_source_distill
 
 目的：把重要讨论、方案、复盘、业务口径沉淀为判断源候选。
 
@@ -95,7 +126,7 @@
 
 评测样本来源：已写入工作OS的判断源候选、DECISIONS.md。
 
-## 4. site_candidate_screen
+## 5. site_candidate_screen
 
 目的：判断候选点位资料是否足够进入复核，并给出初筛结论和资料缺口。
 
@@ -129,7 +160,7 @@
 - 评测样本。
 - 判断口径版本号。
 
-## 5. site_survey_fact_extract
+## 6. site_survey_fact_extract
 
 目的：把选址调研报告中的场地、商务、竞品、市调、工程、投资等信息结构化。
 
@@ -165,7 +196,7 @@
 - 异常字段校验。
 - 口径说明。
 
-## 6. ops_root_cause_analysis
+## 7. ops_root_cause_analysis
 
 目的：解释门店经营表现好/差的原因，并判断其是否适合作为选址样本。
 
@@ -200,7 +231,7 @@
 - 归因规则版本。
 - 正反样本标注评测。
 
-## 7. external_site_intel
+## 8. external_site_intel
 
 目的：围绕候选点位收集外部信号，补充商圈、竞品、客流、话题、新闻和区域风险。
 
@@ -232,7 +263,7 @@
 - 先做地图/POI + 新闻。
 - 点评/小红书先采用人工链接样本 + AI 摘要。
 
-## 8. dashboard_insight_summary
+## 9. dashboard_insight_summary
 
 目的：把 dashboard 页面或筛选结果解释成人能快速行动的摘要。
 
@@ -257,7 +288,7 @@
 - dashboard 数据契约。
 - AI 字段展示规范。
 
-## 9. executive_decision_brief
+## 10. executive_decision_brief
 
 目的：把复杂业务问题压缩成王凯可直接决策的选项。
 

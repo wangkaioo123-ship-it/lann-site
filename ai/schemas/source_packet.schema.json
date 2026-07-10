@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "source_packet",
+  "type": "object",
+  "required": [
+    "packet_id",
+    "source_type",
+    "source_channel",
+    "created_at",
+    "raw_refs",
+    "summary",
+    "needs_expand"
+  ],
+  "properties": {
+    "packet_id": {
+      "type": "string"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "会议",
+        "文档",
+        "聊天",
+        "微信",
+        "电话",
+        "想法",
+        "项目状态",
+        "其他"
+      ]
+    },
+    "source_channel": {
+      "type": "string",
+      "enum": [
+        "飞书机器人",
+        "飞书妙记",
+        "飞书云文档",
+        "飞书转发消息",
+        "微信截图",
+        "语音说明",
+        "本地项目日志",
+        "工作OS"
+      ]
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "sender": {
+      "type": "string"
+    },
+    "raw_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "消息ID、飞书链接、本地文件路径、附件引用等。"
+    },
+    "text": {
+      "type": "string"
+    },
+    "voice_transcript": {
+      "type": "string"
+    },
+    "attachment_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "image",
+          "audio",
+          "file",
+          "link",
+          "none"
+        ]
+      }
+    },
+    "summary": {
+      "type": "string"
+    },
+    "related_objects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "related_projects": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "lann-site",
+          "lann-dashboard",
+          "工作OS",
+          "招商",
+          "服务",
+          "管理",
+          "日常经营",
+          "未知"
+        ]
+      }
+    },
+    "needs_expand": {
+      "type": "boolean"
+    },
+    "expand_targets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "需要展开读取的妙记/云文档/链接/附件。"
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "高",
+        "中",
+        "低"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

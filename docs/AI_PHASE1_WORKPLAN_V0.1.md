@@ -20,6 +20,7 @@
 
 需要定义的任务：
 
+- `feishu_bot_inbox_ingest`：飞书机器人收件箱摄取。
 - `work_item_orchestration`：事项编排。
 - `meeting_recap_extract`：会议复盘提取。
 - `decision_source_distill`：判断源候选提取。
@@ -42,7 +43,7 @@
 
 当前最高优先级：
 
-- `work_item_orchestration`。原因是王凯的三个项目、飞书待办和日常沟通事项已经出现散乱、关联未显性化、多个待办组合后可能推翻原方案的问题。第一阶段先用轻量模板解决“事项关系层”，不急于自动化。
+- `feishu_bot_inbox_ingest` + `work_item_orchestration`。原因是王凯的三个项目、飞书待办和日常沟通事项已经出现散乱、关联未显性化、多个待办组合后可能推翻原方案的问题。入口采用飞书机器人，让王凯像平时发消息一样同步原始资料，再由事项编排识别关系。
 
 ### 2. 模型可插拔前置规范 v0.1
 

@@ -1,0 +1,24 @@
+{
+  "task_id": "feishu_bot_inbox_ingest",
+  "task_name": "飞书机器人收件箱摄取",
+  "owner_project": "cross_project_workos",
+  "purpose": "从飞书机器人会话读取王凯显式发来的文字、截图、语音、链接和转发消息，生成 source_packet，作为事项编排的原始资料层。",
+  "current_implementation": null,
+  "input_sources": [
+    "飞书机器人消息",
+    "飞书妙记链接",
+    "飞书云文档链接",
+    "微信截图",
+    "语音说明",
+    "飞书转发消息",
+    "电话/想法补录"
+  ],
+  "output_schema": "ai/schemas/source_packet.schema.json",
+  "prompt_version": null,
+  "default_model": null,
+  "fallback_model": null,
+  "permission_level": "L1_read + L2_generate",
+  "eval_dataset": "ai/evals/feishu_bot_inbox_ingest",
+  "status": "designed_not_implemented",
+  "last_reviewed_at": "2026-07-10"
+}
