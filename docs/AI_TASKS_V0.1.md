@@ -6,6 +6,7 @@
 
 | 任务ID | 中文名称 | 归属项目 | 当前状态 |
 |---|---|---|---|
+| `work_item_orchestration` | 事项编排 | 跨项目/工作OS | 最高优先级，先轻量化 |
 | `meeting_recap_extract` | 会议复盘提取 | 工作OS | 待设计 |
 | `decision_source_distill` | 判断源候选提取 | 工作OS | 已有规则，待标准化 |
 | `site_candidate_screen` | 候选点位初筛 | lann-site | 已有脚本，待 schema 化 |
@@ -15,7 +16,37 @@
 | `dashboard_insight_summary` | dashboard 洞察摘要 | lann-dashboard | 待设计 |
 | `executive_decision_brief` | 王凯参谋简报 | 跨项目 | 待设计 |
 
-## 1. meeting_recap_extract
+## 1. work_item_orchestration
+
+目的：把飞书待办、会议结论、项目日志、工作OS候选和日常沟通事项编排成“今日应该如何处理”的关系视图。
+
+输入：
+
+- 飞书待办。
+- 飞书消息/文档中的事项。
+- 飞书妙记和会议复盘。
+- `lann-site` 当前项目日志与分析缺口。
+- `lann-dashboard` 项目状态。
+- 工作OS 判断源候选。
+- 王凯临时补充的微信/电话事项。
+
+输出：
+
+- 今日必须执行事项。
+- 可以合并处理事项。
+- 需要先补资料再判断的事项。
+- 可能影响原方案的事项。
+- 建议王凯亲自看的事项。
+- 可交给别人推进的事项。
+- 事项之间的依赖、冲突、重复和组合机会。
+
+权限级别：L1 只读 + L2 生成；不自动改飞书待办、不自动派任务、不自动发消息。
+
+当前优先级：最高。第一阶段先做轻量模板和 schema，不接自动化。
+
+评测样本来源：王凯每日待办、飞书会议结论、候选点位资料缺口、dashboard 项目状态、工作OS判断源候选。
+
+## 2. meeting_recap_extract
 
 目的：把会议纪要、飞书妙记、会后补充内容转成可执行复盘。
 
@@ -41,7 +72,7 @@
 
 评测样本来源：历史会议纪要、飞书妙记、CEO 对齐会议、选址复盘会议。
 
-## 2. decision_source_distill
+## 3. decision_source_distill
 
 目的：把重要讨论、方案、复盘、业务口径沉淀为判断源候选。
 
@@ -64,7 +95,7 @@
 
 评测样本来源：已写入工作OS的判断源候选、DECISIONS.md。
 
-## 3. site_candidate_screen
+## 4. site_candidate_screen
 
 目的：判断候选点位资料是否足够进入复核，并给出初筛结论和资料缺口。
 
@@ -98,7 +129,7 @@
 - 评测样本。
 - 判断口径版本号。
 
-## 4. site_survey_fact_extract
+## 5. site_survey_fact_extract
 
 目的：把选址调研报告中的场地、商务、竞品、市调、工程、投资等信息结构化。
 
@@ -134,7 +165,7 @@
 - 异常字段校验。
 - 口径说明。
 
-## 5. ops_root_cause_analysis
+## 6. ops_root_cause_analysis
 
 目的：解释门店经营表现好/差的原因，并判断其是否适合作为选址样本。
 
@@ -169,7 +200,7 @@
 - 归因规则版本。
 - 正反样本标注评测。
 
-## 6. external_site_intel
+## 7. external_site_intel
 
 目的：围绕候选点位收集外部信号，补充商圈、竞品、客流、话题、新闻和区域风险。
 
@@ -201,7 +232,7 @@
 - 先做地图/POI + 新闻。
 - 点评/小红书先采用人工链接样本 + AI 摘要。
 
-## 7. dashboard_insight_summary
+## 8. dashboard_insight_summary
 
 目的：把 dashboard 页面或筛选结果解释成人能快速行动的摘要。
 
@@ -226,7 +257,7 @@
 - dashboard 数据契约。
 - AI 字段展示规范。
 
-## 8. executive_decision_brief
+## 9. executive_decision_brief
 
 目的：把复杂业务问题压缩成王凯可直接决策的选项。
 
@@ -253,4 +284,3 @@
 
 - 决策简报格式。
 - 王凯认可样本。
-

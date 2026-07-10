@@ -1,0 +1,26 @@
+{
+  "task_id": "work_item_orchestration",
+  "task_name": "事项编排",
+  "owner_project": "cross_project_workos",
+  "purpose": "把飞书待办、会议结论、项目日志、工作OS候选和日常沟通事项编排成关系视图，识别执行事项、判断事项、依赖冲突和可能影响原方案的事项。",
+  "current_implementation": {
+    "template": "docs/templates/DAILY_WORK_ITEM_ORCHESTRATION.md"
+  },
+  "input_sources": [
+    "飞书待办",
+    "飞书消息/文档",
+    "飞书妙记/会议复盘",
+    "lann-site 项目日志与分析缺口",
+    "lann-dashboard 项目状态",
+    "工作OS 判断源候选",
+    "微信/电话后的飞书补录"
+  ],
+  "output_schema": "ai/schemas/work_item_orchestration.output.schema.json",
+  "prompt_version": null,
+  "default_model": null,
+  "fallback_model": null,
+  "permission_level": "L1_read + L2_generate",
+  "eval_dataset": "ai/evals/work_item_orchestration",
+  "status": "highest_priority_lightweight_template",
+  "last_reviewed_at": "2026-07-10"
+}

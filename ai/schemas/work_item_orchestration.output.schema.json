@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "work_item_orchestration output",
+  "type": "object",
+  "required": [
+    "date",
+    "summary",
+    "work_items",
+    "relationship_alerts",
+    "decision_alerts"
+  ],
+  "properties": {
+    "date": {
+      "type": "string",
+      "description": "YYYY-MM-DD"
+    },
+    "summary": {
+      "type": "string",
+      "description": "今日事项编排的总判断。"
+    },
+    "work_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "title",
+          "source",
+          "related_project",
+          "item_type",
+          "priority_view",
+          "recommended_action"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "description": "飞书待办/会议/消息/项目日志/工作OS/口头补录等。"
+          },
+          "related_objects": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "门店、点位、商场、加盟商、员工、项目、会议、合同、经营问题等。"
+          },
+          "related_project": {
+            "type": "string",
+            "enum": [
+              "lann-site",
+              "lann-dashboard",
+              "工作OS",
+              "飞书日常",
+              "招商",
+              "服务",
+              "管理",
+              "跨项目"
+            ]
+          },
+          "item_type": {
+            "type": "string",
+            "enum": [
+              "执行",
+              "沟通",
+              "判断",
+              "复盘",
+              "数据补齐",
+              "方案调整",
+              "风险处理",
+              "委派"
+            ]
+          },
+          "priority_view": {
+            "type": "string",
+            "enum": [
+              "今日必须执行",
+              "可以合并处理",
+              "需要先补资料再判断",
+              "可能影响原方案",
+              "建议王凯亲自看",
+              "可交给别人推进"
+            ]
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "combined_opportunity": {
+            "type": "string",
+            "description": "与其他事项合并思考后可能出现的新判断。"
+          },
+          "recommended_action": {
+            "type": "string"
+          },
+          "owner_suggestion": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "relationship_alerts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "哪些事项最好放在一起看。"
+    },
+    "decision_alerts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "哪些事项可能改变原方案或需要王凯判断。"
+    },
+    "delegate_candidates": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -15,6 +15,14 @@
 
 ---
 
+## 2026-07-10 事项编排任务设为第一阶段最高优先级
+
+- 类型：文档/方案
+- 内容：根据王凯反馈，当前最大效率瓶颈是三个项目与日常待办散乱，飞书 AI 助手能列待办但不能稳定识别事项关系。新增 `work_item_orchestration` 标准任务、输出 schema、eval 样本说明和每日事项编排模板；同步更新 AI 矩阵、第一阶段工作计划和任务清单，把事项编排作为第一阶段最高优先级。短期采用轻量模板，不自动改飞书待办、不派任务、不发消息。
+- 改动文件：docs/AI_MATRIX_V0.1.md；docs/AI_PHASE1_WORKPLAN_V0.1.md；docs/AI_TASKS_V0.1.md；docs/templates/DAILY_WORK_ITEM_ORCHESTRATION.md；ai/tasks/work_item_orchestration.json；ai/schemas/work_item_orchestration.output.schema.json；ai/evals/work_item_orchestration/README.md；DECISIONS.md
+- commit：本提交
+- 验证方法：待提交前校验 `ai/` 下 JSON 文件可被正常解析。
+
 ## 2026-07-09 连锁经营部 AI 矩阵与第一阶段前置工作启动
 
 - 类型：文档/方案
