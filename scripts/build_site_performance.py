@@ -172,7 +172,8 @@ def build(
         revenues = [num(r[7]) for r in rows]
         nonzero_revenues = [x for x in revenues if x > 0]
         revenue_sum = sum(revenues)
-        avg_revenue = revenue_sum / len(rows) if rows else 0
+        active_month_count = len(nonzero_revenues)
+        avg_revenue = revenue_sum / active_month_count if active_month_count else 0
         monthly_rent = num(first[8])
         ratio = monthly_rent / avg_revenue if monthly_rent and avg_revenue else ""
         new_sum = sum(num(r[11]) for r in rows)
@@ -205,7 +206,7 @@ def build(
                 first[9],
                 fmt(ratio, 4) if ratio != "" else "",
                 fmt(new_sum),
-                fmt(new_sum / len(rows) if rows else 0),
+                fmt(new_sum / active_month_count if active_month_count else 0),
                 fmt(customer_sum),
                 fmt(sum(avg_ticket_values) / len(avg_ticket_values) if avg_ticket_values else ""),
                 fmt(

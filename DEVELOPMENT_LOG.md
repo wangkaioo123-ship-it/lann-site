@@ -15,6 +15,102 @@
 
 ---
 
+## 2026-07-14 花木-盈丰客户资料聚合分析
+
+- 类型：数据/业务复盘
+- 内容：基于已归档客户资料 Excel 新增花木-盈丰客户资料分析脚本，只输出门店级聚合，不输出客户明细。识别 `A4-订单数据` 为客户归属门店级汇总表，共 88,630 条客户记录、91 个门店、去重客户数 88,630；同一客户出现在多个所属门店的数量为 0，因此当前文件不能直接验证“花木老客去盈丰后又回流花木”的跨店迁移路径，只能做门店客户资产与 R12 权益/消耗对比。聚合结果显示，花木店客户数 1,671、R12 消耗约 264.5 万、R12 消耗排名第 12；盈丰天地店客户数 360、R12 消耗约 31.9 万、R12 消耗排名第 81。该结果强化“盈丰没有沉淀出足够客户资产”的判断，但花木翻新期间盈丰接近 30 万的来源仍需订单流水级跨店消费数据验证。
+- 改动文件：`scripts/analyze_huamu_yingfeng_customers.py`，`docs/HUAMU_YINGFENG_CUSTOMER_MIGRATION_V0.1.md`，`data/staging/huamu_yingfeng_customer_store_summary.csv`
+- commit：未提交
+- 验证方法：`python -m scripts.analyze_huamu_yingfeng_customers` 生成 91 个门店聚合结果和客户资料分析文档；`python -m compileall scripts\analyze_huamu_yingfeng_customers.py` 通过。
+
+## 2026-07-14 客户资料 Excel 本地归档
+
+- 类型：数据/归档
+- 内容：将王凯放入项目根目录的客户资料 Excel `A1 - 资料收集 - 0622(1).xlsx` 移入本地敏感资料目录 `data/raw/customer_materials/2026-07-14/`。新增归档脚本读取 `.xlsx` 压缩 XML 结构，不依赖外部表格库，输出工作簿结构画像和归档说明。当前文件包含 `A2-业务资料` 与 `A4-订单数据` 两个工作表，其中 `A4-订单数据` 约 88,633 行，包含客户姓名、所属门店、最近到店时间、余额、权益金、消耗等字段，可用于后续花木-盈丰会员迁移分析。原始客户资料仅保存在 `data/` 下，不进入 Git；后续分析优先输出脱敏或聚合结果。
+- 改动文件：`scripts/archive_customer_materials.py`，`docs/CUSTOMER_MATERIALS_ARCHIVE_V0.1.md`，`data/staging/customer_materials_profile.csv`
+- commit：未提交
+- 验证方法：`python -m scripts.archive_customer_materials` 生成 2 行工作簿结构画像和归档说明；`python -m compileall scripts\archive_customer_materials.py` 通过。
+
+## 2026-07-13 花木-盈丰专题 V0.2 业务校准
+
+- 类型：文档/业务复盘
+- 内容：根据王凯逐项反馈，修正花木-盈丰专题判断。花木店确认可定义为成熟老客资产型门店；盈丰天地不是完全不能承接花木客人，而是短期能承接、长期留不住。关键事实包括：盈丰在 B1、电梯和手扶梯旁，停车路径不绕，理论停车体验优于花木；花木翻新约 20 多天期间，盈丰当月生意接近 30 万；花木恢复后，去过盈丰的客人又回到花木；盈丰天地商场自身客流少、后期空铺率严重，更多成为展会或写字楼公共餐饮配套。复盘口径由“500 米没有带来迁移”升级为“500 米可以带来短期迁移，但不能形成持续留存”，并把商场持续经营活力、品牌形象升级型迁店的老客资产损失、老客短期迁移与长期留存拆分纳入后续选址模型因子。
+- 改动文件：`scripts/build_huamu_yingfeng_review.py`，`docs/HUAMU_YINGFENG_REVIEW_V0.1.md`，`DEVELOPMENT_LOG.md`
+- commit：未提交
+- 验证方法：`python -m scripts.build_huamu_yingfeng_review` 重生成专题文档；`python -m compileall scripts/build_huamu_yingfeng_review.py` 通过。
+
+## 2026-07-13 花木店-盈丰天地 500 米迁移失败复盘专题
+
+- 类型：功能/数据/业务复盘
+- 内容：根据王凯补充，明确后续客流、趋势和数据质量由项目侧先拉取并判断，用户主要做业务校准。新增花木店、盈丰天地/云汇天地、花木陆悦坊三店专题复盘脚本，基于 BI 月度经营表、门店映射、租金汇总、门店基础表和样本基准表生成三店月度明细、分阶段汇总和复盘文档。复盘结论先区分盈丰稳定观察期与关停前收缩期，避免把后期异常误当成全周期经营事实；初步判断该案例是微区位/到店路径/老客迁移失败问题，而不是简单商圈或直线距离问题。
+- 改动文件：`scripts/build_huamu_yingfeng_review.py`，`docs/HUAMU_YINGFENG_REVIEW_V0.1.md`，`data/staging/huamu_yingfeng_monthly.csv`，`data/staging/huamu_yingfeng_summary.csv`
+- commit：未提交
+- 验证方法：`python -m scripts.build_huamu_yingfeng_review` 生成 146 行月度明细、10 行阶段汇总和专题文档；`python -m compileall scripts/build_huamu_yingfeng_review.py` 通过；抽查花木近 12 月月均营收约 32.9 万、盈丰 2022-2024 稳定期月均营收约 13.9 万、近 12 月约 9.4 万，与业务反馈方向一致。
+
+## 2026-07-13 BI 经营趋势诊断与 2024Q4 下滑口径
+
+- 类型：功能/数据/业务上下文
+- 内容：根据王凯补充，新客储值转化和老客留存纳入选址匹配度观察指标；老客留存越稳定，原则上越说明门店与周边客群匹配，但仍需与运营承接拆分。新增 BI 趋势诊断脚本，直接读取 BI 原始月度表和门店映射表，输出 2023-2025 月度、季度、年度经营趋势。当前 BI 原始表包含实际营收、现金流、开卡收入、新老客、客单、储值会员转化率、留存率、二次到店率、返店频次、点钟、理疗师产值、生产率、差评、打赏、微信关注等字段。趋势诊断显示，总营收 2023-2025 随门店数增加而增长，但折扣后客单价和理疗师日均产值下降；同店口径下，62 家持续经营门店 2024Q3 单店月均营收约 304,308，2024Q4 降至 287,026，2025Q1 降至 277,300，验证“2024Q4 后大部分门店明显下滑并持续至今”的业务观察。后续归因必须分阶段比较，不能把系统性下滑简单归因于单店选址。
+- 改动文件：scripts/build_bi_trend_diagnostics.py；docs/BI_TREND_DIAGNOSTICS_V0.1.md；DEVELOPMENT_LOG.md
+- commit：待提交
+- 验证方法：`python -m scripts.build_bi_trend_diagnostics` 生成 `bi_trend_monthly_2023_2025.csv`、`bi_trend_quarterly_2023_2025.csv`、`bi_trend_annual_2023_2025.csv`；`python -m compileall scripts\build_bi_trend_diagnostics.py` 通过。
+
+## 2026-07-13 补充 LANN 商业模式与选址归因校准
+
+- 类型：文档/业务上下文
+- 内容：根据王凯补充，完善 LANN 商业模式、门店扩展方式、收入确认逻辑、经营指标与选址指标差异、门店成熟期、好店定义、门店类型处理、代表成功/失败样本和选址硬性条件。明确 LANN 通过直营、加盟、合资扩展；直营/合资偏 CBD 核心与品牌影响力，加盟用于城市品牌立稳后的快速布局与风险分摊。单店收入由现金消费和储值卡卡耗构成，储值和随享卡由总部收取后按消费门店次月结算。选址归因一阶指标优先看新客数量、新客储值转化率、折扣前客单价；开卡、点钟、理疗师产值等更多用于经营诊断和承接拆分。好店定义校准为新客稳定、老客复购高、业绩波动小、租售比 15% 内、月业绩超过 28 万。新增王凯认可的成功样本和需复盘样本，用于后续归因模型校验。
+- 改动文件：docs/LANN_BUSINESS_CONTEXT_V0.1.md；docs/SITE_PERFORMANCE_ATTRIBUTION_V0.1.md；DEVELOPMENT_LOG.md
+- commit：待提交
+- 验证方法：人工记录业务口径；后续 v0.2 归因模型需先用王凯认可样本做校验，再扩展到全量门店。
+
+## 2026-07-13 记录 LANN 组织架构与目标达成率口径
+
+- 类型：文档/业务上下文
+- 内容：根据王凯补充，新增 LANN 业务与组织上下文文档。明确公司由支持中心、上海分公司、华东分公司、产品部和 LANN SPACE 构成；支持中心包括总经办、市场部、连锁经营部、空间体验部、人事部、财务部、IT 部、门店支持与创新部门等，人事下辖总部前台培训部，理疗师手法开发在门店与支持中心下辖。上海分公司与华东分公司每年承担收入和利润指标。同步明确 7 月目标管理周报中的“目标达成率”是集团给分公司的年度实际收入目标推进口径，不直接等同于门店选址好坏，只能作为最新经营状态与分公司经营节奏的校准信号。
+- 改动文件：docs/LANN_BUSINESS_CONTEXT_V0.1.md；docs/SITE_PERFORMANCE_ATTRIBUTION_V0.1.md；DEVELOPMENT_LOG.md
+- commit：待提交
+- 验证方法：人工记录业务口径，后续归因模型需区分选址因素、分公司经营因素、支持中心赋能因素和门店承接因素。
+
+## 2026-07-12 修正新店经营期与成长样本归因口径
+
+- 类型：修复/数据口径
+- 内容：根据王凯反馈，复核深圳湾万象城店和成都银泰中心in99店的归因标签。发现旧口径存在两个问题：一是新店有效营收月份不足时，平均月营收按完整 12 个月摊薄，导致深圳湾万象城租售比被错误放大；二是租售比健康且新客强的门店，仅因营收分位暂低被标为反向样本。修正后，经营汇总按有效营收月份计算平均月营收和平均月新客；有效营收月份少于 6 个月的门店进入“观察样本-经营期不足”；新客强且租售比健康的门店进入“成长样本-新客强租售比健康”。深圳湾万象城店现为观察样本，不作正反定性；成都银泰中心in99店现为成长样本，不再作为反向样本。
+- 改动文件：scripts/build_site_performance.py；scripts/build_site_performance_attribution.py；scripts/build_attribution_review_plan.py；docs/SITE_PERFORMANCE_ATTRIBUTION_V0.1.md；docs/ATTRIBUTION_REVIEW_PLAN_V0.1.md；DEVELOPMENT_LOG.md
+- commit：待提交
+- 验证方法：重新执行 `python -m scripts.export_ops_from_bi` 确认 BI 当前数据截止 2026-03；重新执行 `python -m scripts.build_site_performance --rent-file data/staging/rent_extract_feishu.csv --ops-file data/staging/site_ops_monthly_bi.csv --monthly-out data/staging/site_performance_monthly_bi_feishu_rent.csv --summary-out data/staging/site_performance_summary_bi_feishu_rent.csv`、`python -m scripts.build_site_benchmark`、`python -m scripts.build_site_performance_attribution`、`python -m scripts.build_attribution_review_plan`。修正后深圳湾万象城店有效营收月份 4、平均月营收 293984.48、租售比 0.2258、标签为“观察样本-经营期不足”；成都银泰中心in99店平均月营收 212211.1、租售比 0.1704、平均月新客 166.92、标签为“成长样本-新客强租售比健康”。`python -m compileall scripts\build_site_performance.py scripts\build_site_performance_attribution.py scripts\build_attribution_review_plan.py` 通过。
+
+## 2026-07-12 选址归因代表样本复盘计划
+
+- 类型：功能/数据/方案
+- 内容：基于现有门店经营归因结果，新增代表样本选择脚本和复盘计划文档。每类经营结果标签最多挑 3 个代表门店，优先选择已有结构化调研报告的样本，生成 `site_attribution_review_plan.csv`。下一步不全量补调研报告，先复盘上海荟聚店、武汉天地店、上海张江陆悦天地店、深圳湾万象城店、成都银泰中心in99店 5 个已有调研报告的代表样本，验证“经营结果标签 -> 调研字段 -> 可能选址归因”的链路。
+- 改动文件：scripts/build_attribution_review_plan.py；docs/ATTRIBUTION_REVIEW_PLAN_V0.1.md；DEVELOPMENT_LOG.md
+- commit：待提交
+- 验证方法：`python -m scripts.build_attribution_review_plan` 生成 24 行代表样本复盘清单；`python -m compileall scripts\build_attribution_review_plan.py` 通过。
+
+## 2026-07-12 现有门店经营归因 v0.1
+
+- 类型：功能/数据/方案
+- 内容：根据王凯补充口径，调整 lann-site 第一阶段主线：立项信息表和选址调研报告先用于理解选址业务结构和经营模型字段，不先用历史测算与实际业绩匹配度做主归因。新增现有门店经营归因脚本，基于实际营收、租金、租售比、新客、客单和理疗师产值，对 82 个现有门店打经营结果标签，并反推应优先补充的选址调研字段。新增归因方案文档，同步修正数据设计文档中的 P0 路线。
+- 改动文件：scripts/build_site_performance_attribution.py；docs/SITE_PERFORMANCE_ATTRIBUTION_V0.1.md；docs/lann_site_data_design_v0.1.md；DEVELOPMENT_LOG.md
+- commit：待提交
+- 验证方法：`python -m scripts.build_site_performance_attribution` 生成 82 行经营归因明细和归因汇总，其中正向样本-新客驱动 16 个、正向样本-高产值承接 7 个、正向样本-结构健康 5 个、反向样本-租金高且营收弱 16 个、反向样本-租金不高但营收弱 7 个、压力样本-租金偏高 11 个；已结构化调研报告覆盖 10 个、未覆盖 72 个。`python -m compileall scripts\build_site_performance_attribution.py` 通过。
+
+## 2026-07-12 候选点位初筛 v0.2 接入经营样本对标
+
+- 类型：功能/数据
+- 内容：新增候选点位初筛 v0.2 脚本，在原有资料治理版 `candidate_screen.csv` 基础上接入现有门店经营样本 `site_benchmark.csv` 和经营分位阈值，输出 `candidate_screen_v2.csv`。v0.2 不再只判断资料是否完整，而是给出判断层级、推荐等级、核心判断、主要机会/风险、缺失资料、下一步动作、正向/风险对标样本、城市样本概况和外部情报优先级。当前结果显示经营数据底座已经可用，主要瓶颈在候选点位侧的租金、营收、调研报告链接和商圈/商场字段回填；下一步应先补“优先补租金 / 签约前后补经营模型 / 优先补调研”项目，再启动 P1 外部选址情报包。
+- 改动文件：scripts/build_candidate_screen_v2.py；docs/CANDIDATE_SCREEN_V0.2.md；DEVELOPMENT_LOG.md
+- commit：待提交
+- 验证方法：`python -m scripts.build_site_benchmark` 生成 82 个现有门店经营样本；`python -m scripts.build_candidate_screen` 生成 236 个资料治理候选项目；`python -m scripts.build_candidate_screen_v2` 生成 236 个判断增强候选项目，其中优先复核 1 个、签约前后补经营模型 4 个、优先补租金 21 个、优先补调研 14 个、已开业回填复盘 85 个；`python -m compileall scripts\build_candidate_screen_v2.py` 通过。
+
+## 2026-07-12 bot 阶段归档与选址项目交接
+
+- 类型：文档/交接
+- 内容：本阶段主要转入 `C:\Users\王凯\lann-work-bot` 建设飞书工作助手，已形成飞书机器人统一入口、自然语言事项编排、DeepSeek 模型路由、工作OS上下文/输出偏好/已确认判断读取、项目进展查询、组织角色上下文、通讯录读取候选和通讯录权限诊断。`lann-site` 继续保持选址分析与外部选址情报层定位，不承载在线机器人服务；后续在 bot 文件夹唤醒时继续工作助手，在本项目唤醒时继续选址项目。下一步选址主线回到候选点位对标、外部选址情报、正反样本库和判断规则沉淀。
+- 改动文件：DEVELOPMENT_LOG.md
+- commit：待提交
+- 验证方法：已核对 `lann-work-bot` 的 DEVELOPMENT_LOG，确认 2026-07-11 至 2026-07-12 的工作助手建设、组织上下文和通讯录权限诊断均已在 bot 项目归档；已核对 `lann-site` 的 DECISIONS.md，确认 AI 矩阵、外部选址情报层和新建 bot 项目的关键决策已留档。
+
 ## 2026-07-10 新建 lann-work-bot 承载飞书机器人事项编排
 
 - 类型：功能/架构
