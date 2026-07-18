@@ -1,2 +1,4 @@
-# lann-site 依赖（保持精简）
+# lann-site 核心依赖（飞书/BI只读抽取与标准分析链）
 requests>=2.31.0
+
+# 合同PDF/OCR脚本的可选依赖见 requirements-ocr.txt，服务器核心批处理无需安装。

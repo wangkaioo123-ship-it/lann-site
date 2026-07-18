@@ -94,6 +94,19 @@ def sample_role(ratio: float, revenue: float, revenue_p50: float, revenue_p75: f
     return "中性样本"
 
 
+def economic_gate(ratio: float, revenue: float, months: int) -> tuple[str, str]:
+    if months < 6:
+        return "观察-经营期不足", "有效营收月份少于6个月"
+    gaps = []
+    if revenue < 280000:
+        gaps.append("平均月营收低于28万")
+    if ratio > 0.15:
+        gaps.append("租售比高于15%")
+    if gaps:
+        return "经济性未达标", "；".join(gaps)
+    return "经济性达标-待完整验证", "尚需验证新客稳定性、老客复购和业绩波动"
+
+
 def risk_note(ratio: float, revenue: float, months: int, new_customers: float, therapist_output: float) -> str:
     notes = []
     if months < 6:
@@ -122,6 +135,8 @@ def build(summary_path: Path, base_path: Path, out_path: Path, stats_out: Path) 
     rents = [num(row["月租金"]) for row in rows]
     new_customers = [num(row["平均月新客数"]) for row in rows if num(row["平均月新客数"]) > 0]
     therapist_outputs = [num(row["平均理疗师日均产值"]) for row in rows if num(row["平均理疗师日均产值"]) > 0]
+    retentions = [num(row.get("平均留存率")) for row in rows if num(row.get("平均留存率")) > 0]
+    return_frequencies = [num(row.get("平均返店频次")) for row in rows if num(row.get("平均返店频次")) > 0]
 
     stats = {
         "租售比": ratios,
@@ -129,6 +144,8 @@ def build(summary_path: Path, base_path: Path, out_path: Path, stats_out: Path) 
         "月租金": rents,
         "平均月新客数": new_customers,
         "平均理疗师日均产值": therapist_outputs,
+        "平均留存率": retentions,
+        "平均返店频次": return_frequencies,
     }
     thresholds = {
         name: {
@@ -164,8 +181,18 @@ def build(summary_path: Path, base_path: Path, out_path: Path, stats_out: Path) 
         "新客分位",
         "理疗师产值分位",
         "样本角色",
+        "好店经济性Gate",
+        "好店Gate缺口",
+        "样本用途说明",
         "风险提示",
         "选址使用建议",
+        "客户指标月份数",
+        "客户指标截至月份",
+        "营收来源说明",
+        "平均留存率",
+        "平均返店频次",
+        "留存率分位",
+        "返店频次分位",
     ]
 
     out = []
@@ -185,6 +212,7 @@ def build(summary_path: Path, base_path: Path, out_path: Path, stats_out: Path) 
             thresholds["近12月平均月营收"]["p75"],
             months,
         )
+        gate, gate_gap = economic_gate(ratio, revenue, months)
         if role.startswith("正向"):
             advice = "可作为新点位正向对标"
         elif role.startswith("反向"):
@@ -245,8 +273,30 @@ def build(summary_path: Path, base_path: Path, out_path: Path, stats_out: Path) 
                     high_good=True,
                 ),
                 role,
+                gate,
+                gate_gap,
+                "归因研究样本；正向样本不等同于正式好店结论",
                 risk_note(ratio, revenue, months, avg_new, therapist_output),
                 advice,
+                row.get("客户指标月份数", ""),
+                row.get("客户指标截至月份", ""),
+                row.get("营收来源说明", ""),
+                row.get("平均留存率", ""),
+                row.get("平均返店频次", ""),
+                rank_bucket(
+                    num(row.get("平均留存率")),
+                    thresholds["平均留存率"]["p25"],
+                    thresholds["平均留存率"]["p50"],
+                    thresholds["平均留存率"]["p75"],
+                    high_good=True,
+                ),
+                rank_bucket(
+                    num(row.get("平均返店频次")),
+                    thresholds["平均返店频次"]["p25"],
+                    thresholds["平均返店频次"]["p50"],
+                    thresholds["平均返店频次"]["p75"],
+                    high_good=True,
+                ),
             ]
         )
 

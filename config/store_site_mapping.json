@@ -1,0 +1,530 @@
+[
+  {
+    "hanson_store_name": "889广场店",
+    "site_id": "L0071",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "丁香国际店",
+    "site_id": "L0018",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "上海万科天空之城店",
+    "site_id": "L0054",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "上海万象城店",
+    "site_id": "L0043",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "上海中环百联店",
+    "site_id": "L0063",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "上海汇智国际商业中心店",
+    "site_id": "L0057",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "上海荟聚店",
+    "site_id": "L0073",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "上海虹桥龙湖天街店",
+    "site_id": "L0024",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "上海长风大悦城店",
+    "site_id": "L0015",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "世茂店",
+    "site_id": "L0009",
+    "status": "confirmed",
+    "notes": "确认匹配"
+  },
+  {
+    "hanson_store_name": "中兴壹号店",
+    "site_id": "L0047",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "中海环宇城店",
+    "site_id": "L0060",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "丰盛里店",
+    "site_id": "L0013",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "五角场店",
+    "site_id": "L0014",
+    "status": "confirmed",
+    "notes": "确认匹配"
+  },
+  {
+    "hanson_store_name": "前滩L+PLAZA店",
+    "site_id": "L0046",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "协信星光广场店",
+    "site_id": "L0050",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "南翔印象城店",
+    "site_id": "L0017",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "博荟广场店",
+    "site_id": "L0022",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "啦啦宝都店",
+    "site_id": "L0031",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "嘉亭荟店",
+    "site_id": "L0069",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "复兴荟店",
+    "site_id": "L0030",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "复地活力城店",
+    "site_id": "L0040",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "大宁店",
+    "site_id": "L0007",
+    "status": "confirmed",
+    "notes": "确认匹配，同瑞虹店换了铺子"
+  },
+  {
+    "hanson_store_name": "奉贤龙湖天街店",
+    "site_id": "L0044",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "宁曼上虞店",
+    "site_id": "",
+    "status": "exclude",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "宁曼杭州武林里店",
+    "site_id": "",
+    "status": "exclude",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "宝乐汇店",
+    "site_id": "L0020",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "宝山日月光店",
+    "site_id": "L0028",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "张江陆悦天地店",
+    "site_id": "L0082",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "徐家汇店",
+    "site_id": "L0010",
+    "status": "confirmed",
+    "notes": "确认匹配"
+  },
+  {
+    "hanson_store_name": "成都万象城店",
+    "site_id": "L0023",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "成都优品道店",
+    "site_id": "L0034",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "成都太古里旗舰店",
+    "site_id": "L0080",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "新嘉中心店",
+    "site_id": "",
+    "status": "exclude",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "新天地店",
+    "site_id": "L0003",
+    "status": "confirmed",
+    "notes": "按用户确认：新天地店对应 L0003"
+  },
+  {
+    "hanson_store_name": "新达汇三林店",
+    "site_id": "L0066",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "日月光店",
+    "site_id": "L0008",
+    "status": "confirmed",
+    "notes": "指的是打浦桥日月光店"
+  },
+  {
+    "hanson_store_name": "昆明大悦城店",
+    "site_id": "",
+    "status": "exclude",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "杭州EFC店",
+    "site_id": "L0037",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "杭州东站万象汇店",
+    "site_id": "L0064",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "杭州中心店",
+    "site_id": "L0059",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "杭州奥体印象城店",
+    "site_id": "L0025",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "杭州来福士店",
+    "site_id": "L0049",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "杭州滨江银泰店",
+    "site_id": "L0039",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "杭州黄龙万科店",
+    "site_id": "L0068",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "松江印象城店",
+    "site_id": "L0078",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "梅赛德斯奔驰文化中心店",
+    "site_id": "L0016",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "正大乐城店",
+    "site_id": "L0036",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "正大广场店",
+    "site_id": "L0041",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "武汉万象城店",
+    "site_id": "L0033",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "武汉天地店",
+    "site_id": "L0076",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "汇京国际广场店",
+    "site_id": "L0026",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "江湾里店",
+    "site_id": "L0053",
+    "status": "confirmed",
+    "notes": "确认匹配"
+  },
+  {
+    "hanson_store_name": "浦江欢乐颂店",
+    "site_id": "L0062",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "淮海店",
+    "site_id": "L0001",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "深圳湾万象城店",
+    "site_id": "L0084",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "温州滨江万象城店",
+    "site_id": "L0058",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "湖滨道店",
+    "site_id": "L0061",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "滨江万芊荟",
+    "site_id": "L0038",
+    "status": "confirmed",
+    "notes": "原滨江光合新座店"
+  },
+  {
+    "hanson_store_name": "漕宝店",
+    "site_id": "L0012",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "漕河泾印象城店",
+    "site_id": "L0065",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "瑞虹店",
+    "site_id": "L0004",
+    "status": "confirmed",
+    "notes": "门店换了铺子还在运营中"
+  },
+  {
+    "hanson_store_name": "白玉兰广场店",
+    "site_id": "L0048",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "百联南方商城店",
+    "site_id": "L0077",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "盈丰天地店",
+    "site_id": "L0032",
+    "status": "confirmed",
+    "notes": "原云汇天地店"
+  },
+  {
+    "hanson_store_name": "紫荆广场店",
+    "site_id": "L0072",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "维璟印象城店",
+    "site_id": "L0042",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "花木店",
+    "site_id": "L0002",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "花木陆悦坊店",
+    "site_id": "L0083",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "苏州ICC店",
+    "site_id": "L0085",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "苏州仓街店",
+    "site_id": "L0055",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "苏州狮山龙湖天街店",
+    "site_id": "L0056",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "莘庄店",
+    "site_id": "L0005",
+    "status": "confirmed",
+    "notes": "确认匹配"
+  },
+  {
+    "hanson_store_name": "西岸梦中心店",
+    "site_id": "L0074",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "贵阳万象汇店",
+    "site_id": "L0029",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "贵阳汇金星力城店",
+    "site_id": "L0035",
+    "status": "confirmed",
+    "notes": "排除"
+  },
+  {
+    "hanson_store_name": "金桥国际店",
+    "site_id": "L0067",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "金虹桥店",
+    "site_id": "L0006",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "银泰中心in99店",
+    "site_id": "L0075",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "长宁来福士店",
+    "site_id": "L0051",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "阪急百货店",
+    "site_id": "L0081",
+    "status": "confirmed",
+    "notes": "确认匹配"
+  },
+  {
+    "hanson_store_name": "陆家嘴中心店",
+    "site_id": "L0011",
+    "status": "confirmed",
+    "notes": "确认匹配"
+  },
+  {
+    "hanson_store_name": "静安国际中心店",
+    "site_id": "L0021",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "静安大悦城店",
+    "site_id": "L0027",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "静安寺（CP静安）店",
+    "site_id": "L0045",
+    "status": "confirmed",
+    "notes": "确认匹配"
+  },
+  {
+    "hanson_store_name": "静安寺（久光百货）店",
+    "site_id": "L0079",
+    "status": "confirmed",
+    "notes": "确认匹配"
+  },
+  {
+    "hanson_store_name": "高岛屋百货店",
+    "site_id": "L0070",
+    "status": "confirmed",
+    "notes": ""
+  },
+  {
+    "hanson_store_name": "鸿寿坊店",
+    "site_id": "L0052",
+    "status": "confirmed",
+    "notes": ""
+  }
+]

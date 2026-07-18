@@ -1,0 +1,2 @@
+# Optional dependencies for contract PDF rendering and OCR batch scripts.
+PyMuPDF>=1.24.0

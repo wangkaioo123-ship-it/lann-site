@@ -123,7 +123,7 @@ def main():
             row += [has_fc, link, rec.get("record_id", "")]
             writer.writerow(row)
 
-    print(f"✅ 底表已生成：{out_path}")
+    print(f"底表已生成：{out_path}")
     print(f"   共 {len(records)} 个点位，其中 {n_forecast} 个有测算表、{len(records) - n_forecast} 个无（=当年未立项的反例）")
 
 

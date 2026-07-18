@@ -49,9 +49,10 @@ def build(
     summary_out=SUMMARY_OUT,
     ops_path=OPS,
     exclude_site_ids=None,
+    base_path=BASE,
 ):
     exclude_site_ids = set(exclude_site_ids or [])
-    base_rows = read_csv(BASE)
+    base_rows = read_csv(Path(base_path))
     ops_rows = read_csv(Path(ops_path))
     rent_rows = read_csv(Path(rent_path))
 
@@ -85,6 +86,11 @@ def build(
         "理疗师生产率",
         "租金来源文件",
         "租金备注",
+        "营收数据来源",
+        "营收数据完整性",
+        "营收质量备注",
+        "留存率",
+        "返店频次",
     ]
 
     monthly = []
@@ -124,6 +130,11 @@ def build(
                 fmt(op.get("理疗师生产率", "")),
                 rent.get("来源文件", ""),
                 rent.get("备注", ""),
+                op.get("来源口径") or op.get("数据来源", ""),
+                op.get("数据完整性", ""),
+                op.get("质量备注", ""),
+                fmt(op.get("留存率", "")),
+                fmt(op.get("返店频次", "")),
             ]
         )
 
@@ -160,10 +171,15 @@ def build(
         "租售比_按平均月营收",
         "近12月新客数",
         "平均月新客数",
+        "客户指标月份数",
+        "客户指标截至月份",
         "近12月总客数",
         "平均客单价_折扣后",
         "平均理疗师日均产值",
         "分析可用性",
+        "营收来源说明",
+        "平均留存率",
+        "平均返店频次",
     ]
 
     summary = []
@@ -176,10 +192,15 @@ def build(
         avg_revenue = revenue_sum / active_month_count if active_month_count else 0
         monthly_rent = num(first[8])
         ratio = monthly_rent / avg_revenue if monthly_rent and avg_revenue else ""
-        new_sum = sum(num(r[11]) for r in rows)
-        customer_sum = sum(num(r[13]) for r in rows)
+        new_rows = [r for r in rows if r[11] not in ("", None)]
+        customer_rows = [r for r in rows if r[13] not in ("", None)]
+        new_sum = sum(num(r[11]) for r in new_rows)
+        customer_sum = sum(num(r[13]) for r in customer_rows)
+        metric_months = sorted(r[6] for r in rows if r[11] not in ("", None) or r[13] not in ("", None))
         avg_ticket_values = [num(r[15]) for r in rows if num(r[15]) > 0]
         avg_therapist_prod_values = [num(r[18]) for r in rows if num(r[18]) > 0]
+        retention_values = [num(r[25]) for r in rows if len(r) > 25 and r[25] not in ("", None)]
+        return_frequency_values = [num(r[26]) for r in rows if len(r) > 26 and r[26] not in ("", None)]
 
         if first[9] == "当年已定" and nonzero_revenues:
             usability = "可用于租售比分析"
@@ -206,7 +227,9 @@ def build(
                 first[9],
                 fmt(ratio, 4) if ratio != "" else "",
                 fmt(new_sum),
-                fmt(new_sum / active_month_count if active_month_count else 0),
+                fmt(new_sum / len(new_rows) if new_rows else ""),
+                len(metric_months),
+                metric_months[-1] if metric_months else "",
                 fmt(customer_sum),
                 fmt(sum(avg_ticket_values) / len(avg_ticket_values) if avg_ticket_values else ""),
                 fmt(
@@ -215,6 +238,9 @@ def build(
                     else ""
                 ),
                 usability,
+                "；".join(sorted({r[22] for r in rows if len(r) > 22 and r[22]})),
+                fmt(sum(retention_values) / len(retention_values) if retention_values else ""),
+                fmt(sum(return_frequency_values) / len(return_frequency_values) if return_frequency_values else ""),
             ]
         )
 
@@ -233,6 +259,7 @@ if __name__ == "__main__":
     parser.add_argument("--ops-file", default=str(OPS))
     parser.add_argument("--monthly-out", default=str(MONTHLY_OUT))
     parser.add_argument("--summary-out", default=str(SUMMARY_OUT))
+    parser.add_argument("--base-file", default=str(BASE))
     parser.add_argument(
         "--include-excluded-sites",
         action="store_true",
@@ -240,4 +267,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     exclude_site_ids = set() if args.include_excluded_sites else DEFAULT_EXCLUDE_SITE_IDS
-    build(args.rent_file, args.monthly_out, args.summary_out, args.ops_file, exclude_site_ids)
+    build(args.rent_file, args.monthly_out, args.summary_out, args.ops_file, exclude_site_ids, args.base_file)

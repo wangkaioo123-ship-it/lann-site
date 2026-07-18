@@ -1,0 +1,122 @@
+[
+  {
+    "hanson_store_name": "瑞虹店",
+    "analysis_point_id": "L0004-01",
+    "source_site_id": "L0004",
+    "source_record_id": "recxH0FwJH",
+    "point_name": "上海瑞虹月亮湾旧铺",
+    "effective_start": "2017-03-01",
+    "effective_end": "2024-09-19",
+    "resolution_status": "confirmed",
+    "relation_type": "同商场换铺",
+    "notes": "旧铺LG1-029"
+  },
+  {
+    "hanson_store_name": "瑞虹店",
+    "analysis_point_id": "L0004-02",
+    "source_site_id": "L0004",
+    "source_record_id": "recu9vcpor4KYZ",
+    "point_name": "上海瑞虹月亮湾新铺",
+    "effective_start": "2024-09-20",
+    "effective_end": "",
+    "resolution_status": "confirmed",
+    "relation_type": "同商场换铺",
+    "notes": "新铺2F-216a1"
+  },
+  {
+    "hanson_store_name": "大宁店",
+    "analysis_point_id": "L0007-01",
+    "source_site_id": "L0007",
+    "source_record_id": "recoZwvW0f",
+    "point_name": "上海大宁国际旧铺",
+    "effective_start": "2017-12-16",
+    "effective_end": "2025-12-03",
+    "resolution_status": "confirmed",
+    "relation_type": "同商场换铺",
+    "notes": "旧铺11座501-1"
+  },
+  {
+    "hanson_store_name": "大宁店",
+    "analysis_point_id": "L0007-02",
+    "source_site_id": "L0007",
+    "source_record_id": "recuFoC2UvTTKp",
+    "point_name": "上海大宁国际新铺",
+    "effective_start": "2025-12-04",
+    "effective_end": "",
+    "resolution_status": "confirmed",
+    "relation_type": "同商场换铺",
+    "notes": "新铺301D"
+  },
+  {
+    "hanson_store_name": "日月光店",
+    "analysis_point_id": "L0008-01",
+    "source_site_id": "L0008",
+    "source_record_id": "recyV9zhAQ",
+    "point_name": "上海打浦桥日月光旧铺",
+    "effective_start": "",
+    "effective_end": "2023-05-15",
+    "resolution_status": "confirmed",
+    "relation_type": "同商场换铺",
+    "notes": "王凯确认旧址截至2023-05-15"
+  },
+  {
+    "hanson_store_name": "日月光店",
+    "analysis_point_id": "L0008-02",
+    "source_site_id": "L0008",
+    "source_record_id": "recuZkZl15",
+    "point_name": "上海打浦桥日月光新铺",
+    "effective_start": "2023-07-29",
+    "effective_end": "",
+    "resolution_status": "confirmed",
+    "relation_type": "同商场换铺",
+    "notes": "王凯确认新址从2023-07-29开始"
+  },
+  {
+    "hanson_store_name": "宝乐汇店",
+    "analysis_point_id": "L0020-01",
+    "source_site_id": "L0020",
+    "source_record_id": "recevdCpnS",
+    "point_name": "上海宝杨宝龙旧点位",
+    "effective_start": "2020-12-30",
+    "effective_end": "2026-02-19",
+    "resolution_status": "confirmed",
+    "relation_type": "跨商场迁址约500米",
+    "notes": "王凯确认以2026-02-20为切分点"
+  },
+  {
+    "hanson_store_name": "宝乐汇店",
+    "analysis_point_id": "L0087-01",
+    "source_site_id": "L0087",
+    "source_record_id": "recv2olKP5c0E4",
+    "point_name": "上海宝乐汇新点位",
+    "effective_start": "2026-02-20",
+    "effective_end": "",
+    "resolution_status": "confirmed",
+    "relation_type": "跨商场迁址约500米",
+    "notes": "王凯确认以2026-02-20为切分点"
+  },
+  {
+    "hanson_store_name": "新天地店",
+    "analysis_point_id": "L0003",
+    "source_site_id": "L0003",
+    "source_record_id": "recMYYKgFT",
+    "point_name": "上海新天地复兴SOHO",
+    "effective_start": "",
+    "effective_end": "",
+    "resolution_status": "confirmed",
+    "relation_type": "停业装修未换铺",
+    "notes": "BI新天地店完整历史归入同一物理点位"
+  },
+  {
+    "hanson_store_name": "新天地店",
+    "analysis_point_id": "L0003",
+    "source_site_id": "",
+    "source_record_id": "recuOUhh6Lol2b",
+    "point_name": "复兴SOHO装修期记录",
+    "effective_start": "",
+    "effective_end": "",
+    "resolution_status": "exclude",
+    "relation_type": "停业装修未换铺",
+    "notes": "源表日期错误且不新建选址样本"
+  }
+]
