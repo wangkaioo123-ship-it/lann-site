@@ -15,6 +15,14 @@
 
 ---
 
+## 2026-07-18 数据身份契约与 Hanson BI 实时源评审
+
+- 类型：功能/数据治理/评审
+- 内容：新增分析前数据契约闸门，检查空点位 ID、重复关联 ID、门店映射漂移、经营月表重复主键、输入批次时间差和数据新鲜度；新增物理点位经营期映射、数据批次 manifest、统一重建入口和最小单元测试。根据王凯确认，将瑞虹、大宁、日月光和宝杨宝龙-宝乐汇的迁址前后拆为独立点位，过渡月不强行拆分；复兴 SOHO 停业装修但未换铺，BI“新天地店”完整历史归入 `L0003`。只读核对 Hanson BI 后确认月度指标表截止2026-03，日结表更新到2026-07-18。重叠对账确认营业收入应使用 `prod_amt`；并完成2026-04起双源接续、新老客、客次、留存率和返店频次接入。根据Hanson补充，服务器已在 `/srv/apps/lann-site/repo` 完成独立用户、venv、只读deploy key和飞书凭证设置。新增跟踪版84店映射+4店排除配置、服务器预检、完整批处理入口、运行状态文件和07:30 systemd timer模板；按服务器顺序本地29秒完整跑通，实时抽取96点位（73有测算、23无测算），数据契约0错误3警告。实时租金刷新发现啦啦宝都当前租金67,471元/月，租售比22.41%，从经济性达标名单移除；当前达标为梅赛德斯奔驰文化中心、中海环宇城和大宁新铺，其中大宁只作换铺承接样本。
+- 改动文件：`config/site_identity_episodes.json`、`config/ops_source_policy.json`、`config/store_site_mapping.json`、`scripts/validate_data_contract.py`、`scripts/build_site_identity_episodes.py`、`scripts/build_data_manifest.py`、`scripts/rebuild_analysis.py`、`scripts/probe_bi_freshness.py`、`scripts/reconcile_bi_revenue_sources.py`、`scripts/refresh_hanson_daily_ops.py`、`scripts/build_ops_source_bridge.py`、`scripts/build_site_performance.py`、`scripts/build_site_benchmark.py`、`scripts/build_good_store_validation.py`、`scripts/check_server_readiness.py`、`scripts/run_server_batch.py`、`deploy/systemd/`、`tests/`、`README.md`、`requirements.txt`、`requirements-ocr.txt`、`docs/DATA_IDENTITY_CONTRACT_V0.1.md`、`docs/SITE_IDENTITY_RESOLUTION_PROPOSAL_V0.1.md`、`docs/BI_REALTIME_SOURCE_REVIEW_V0.1.md`、`docs/GOOD_STORE_VALIDATION_V0.1.md`、`docs/NEXT_PHASE_PLAN_V0.1.md`、`docs/HANSON_SERVER_HANDOFF_V0.1.md`、`docs/SITE_PERFORMANCE_ATTRIBUTION_V0.1.md`、`docs/ATTRIBUTION_REVIEW_PLAN_V0.1.md`、`docs/server_batch.md`、`docs/lann_site_data_design_v0.1.md`、`AGENTS.md`、`CLAUDE.md`、`DEVELOPMENT_LOG.md`
+- commit：未提交
+- 验证方法：`python -m scripts.run_server_batch` 按服务器顺序完整通过并写入成功状态，耗时约29秒；`python -m unittest discover -s tests -v`；`python -m compileall -q config services scripts tests`；数据契约0错误、3警告，生成83个可评估点位和3条完整好店复核记录。
+
 ## 2026-07-14 花木-盈丰客户资料聚合分析
 
 - 类型：数据/业务复盘

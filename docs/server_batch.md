@@ -1,6 +1,10 @@
-# lann-site 服务器批处理运行说明
+# lann-site 服务器批处理部署预案
 
-lann-site 不开放公网，只做批处理输出。服务器侧只跑"租户 token 读多维表格 → 清洗 → 输出 CSV"这一类无人值守任务。
+> 状态（2026-07-18）：Hanson 已在 `/srv/apps/lann-site/repo` 完成独立用户、venv、只读deploy key和只读飞书凭证设置，`extract_base` 已成功执行。完整经营分析和timer尚待本轮代码上线验收。
+
+lann-site 不开放公网，只做批处理输出。目标服务器侧只跑“只读数据源 → 清洗/聚合 → 输出本地 staging”这一类无人值守任务。
+
+Hanson BI 日结 `prod_amt` 已在本地主分析链完成接入：完整月更新至 2026-06，滚动趋势截止 2026-07-17。完整服务器交接见 `docs/HANSON_SERVER_HANDOFF_V0.1.md`。
 
 ## 环境
 - Python 3.11+（本地用 3.14 验证过；3.11/3.12 均可）
@@ -17,6 +21,17 @@ python -m scripts.extract_base
 - 作用：读"租赁信息表"（多维表格，租户 token）→ 输出 `data/staging/base_table.csv`
 - 只读、不写飞书、不碰云文档、不需要用户 OAuth —— 符合 lann-site 只读边界
 - 退出码 0 = 成功；缺凭证会报 `缺少必填配置 XXX`（不泄密钥）
+
+经营数据刷新与分析重建：
+```
+python -m scripts.refresh_hanson_daily_ops
+python -m scripts.rebuild_analysis
+python -m scripts.run_server_batch
+```
+- 第一条只读 Hanson BI，生成门店级日/月聚合和趋势。
+- 第二条不访问网络，使用本地源文件通过质量闸门后重建分析结果。
+- 建议服务器每日在门店全部结算后的低峰时段运行；即使当天只完成部分门店，趋势截止日也不会前移到不完整日。
+- 确认频率：每天北京时间07:30；输出当前只由lann-site本地分析消费，不写飞书或dashboard。
 
 ## 不在服务器批处理范围（需交互，跑不了无人值守）
 - `extract_focus.py` / `extract_forecasts.py`：读测算云文档，需用户 OAuth（2h 过期、要人工登录）

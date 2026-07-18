@@ -1,5 +1,7 @@
 # lann-site 选址分析 · 数据设计方案 v0.1
 
+> 数据身份与跨批次关联的补充规则见 `docs/DATA_IDENTITY_CONTRACT_V0.1.md`。在空 ID、重复 ID、映射漂移等契约问题处理前，下游标签仅作为诊断结果，不作为正式选址结论。
+
 > 本文档定义 lann-site 项目的结果变量、点位主数据表结构与数据抽取优先级,作为 lann-site 仓库的初始设计文档。
 > lann-site 为独立仓库,负责选址分析与 AI 判断;通过 Feishu 作为数据契约层与 lann-dashboard(展示层)对接。
 

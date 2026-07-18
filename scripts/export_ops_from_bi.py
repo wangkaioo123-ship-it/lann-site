@@ -1,5 +1,6 @@
 import argparse
 import csv
+import json
 
 from config import settings
 from services import bi_client
@@ -8,7 +9,7 @@ from services import bi_client
 BI_DATABASE_ID = 3
 BI_TABLE_ID = 825
 BI_TABLE_NAME = "report_store_month_indicator_export"
-MAPPING = settings.ROOT_DIR / "data" / "staging" / "store_month_mapping_review.csv"
+MAPPING = settings.ROOT_DIR / "config" / "store_site_mapping.json"
 
 BI_FIELDS = [
     "id",
@@ -125,13 +126,13 @@ def query_native_all(page_size: int, max_rows: int) -> tuple[list[str], list[lis
 
 
 def load_mapping() -> tuple[dict[str, str], set[str]]:
-    mapping_rows = list(csv.DictReader(MAPPING.open(encoding="utf-8-sig", newline="")))
+    mapping_rows = json.loads(MAPPING.read_text(encoding="utf-8"))
     store_to_site = {}
     excluded = set()
     for row in mapping_rows:
-        store = row["Hanson门店名称"]
-        site_id = (row.get("确认点位ID") or "").strip()
-        if site_id == "排除":
+        store = row["hanson_store_name"]
+        site_id = (row.get("site_id") or "").strip()
+        if row.get("status") == "exclude":
             excluded.add(store)
         elif site_id:
             store_to_site[store] = site_id

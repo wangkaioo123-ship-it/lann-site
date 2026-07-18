@@ -1,0 +1,7 @@
+{
+  "monthly_source_end": "2026-03",
+  "daily_source_start": "2026-04-01",
+  "daily_revenue_field": "prod_amt",
+  "require_complete_calendar_month": true,
+  "notes": "王磊月度稿保留至2026-03；Hanson店长日结prod_amt从2026-04接续。月度分析只纳入完整自然月。"
+}

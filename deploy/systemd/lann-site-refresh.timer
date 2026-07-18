@@ -1,0 +1,11 @@
+[Unit]
+Description=Run lann-site every morning after store daily close synchronization
+
+[Timer]
+OnCalendar=*-*-* 07:30:00 Asia/Shanghai
+Persistent=true
+RandomizedDelaySec=5m
+Unit=lann-site-refresh.service
+
+[Install]
+WantedBy=timers.target
