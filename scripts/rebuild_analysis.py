@@ -33,6 +33,8 @@ COMMANDS = [
         "data/staging/base_table_analysis.csv",
     ],
     [sys.executable, "-m", "scripts.build_good_store_validation"],
+    [sys.executable, "-m", "scripts.build_rent_ratio_sensitivity"],
+    [sys.executable, "-m", "scripts.build_daily_ramp_analysis"],
     [sys.executable, "-m", "scripts.build_site_performance_attribution"],
     [sys.executable, "-m", "scripts.build_attribution_review_plan"],
     [sys.executable, "-m", "scripts.build_candidate_screen_v2"],

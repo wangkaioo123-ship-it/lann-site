@@ -15,6 +15,15 @@
 
 ---
 
+## 2026-07-19 好店 / 差店样本扩展、SABC店型与日级分析协议
+
+- 类型：功能/数据分析/业务评审
+- 内容：基于截至2026-06的83个可分析点位，按经济性、稳定性和客户健康三层Gate筛选首批业务评审样本。王凯确认中海环宇城、梅赛德斯奔驰文化中心为独立正向样本，武汉天地、长风大悦城为反向结果样本，百联南方保留反向候选；确认开业零碎月不进入月度Gate、数据不足时转日级分析，已终止且至少6个有效月可作为反向结果例外，丰盛里作为战略压力样本。补充复核丁香国际、虹桥龙湖天街、万科天空、博荟广场及9家反向候选；丁香国际和万科天空之城确认为边界正向样本，15%租售比保留为待更多结果验证的首版基准。只读接入2026门店SABC飞书表，共78家（S4/A17/B35/C22）；温州万象城因分类前已终止而未纳入，不是遗漏。新增可复用导出脚本和解析测试；明确当前SABC是综合商场等级、门店业绩和公司规划形成的业务讨论标签，用于战略店型和同类基准，不覆盖经济性事实，也暂不作为模型真值。新增日级爬坡分析协议，定义7/14/28日窗口、完整日/月和月度Gate衔接。
+- 实现：开业零碎月保留原始记录但自动排除出月均营收、CV、趋势和好店Gate；新增7/14/28日日级营收、覆盖率、工作日/周末、月营收及租售比暂估。SABC只读缓存映射到点位，77个日结点位中76个完成分类，世茂广场因讨论稿未列入而保持空值；新增同类28日日均中位数对标。新增14%/15%/16%/18%租售比敏感性输出：至少6月经济性候选分别为3/4/10/12家，说明15%至16%为当前密集边界。
+- 改动文件：`scripts/export_store_classification_from_feishu.py`、`scripts/build_daily_ramp_analysis.py`、`scripts/build_rent_ratio_sensitivity.py`、`scripts/build_site_performance.py`、`scripts/build_good_store_validation.py`、`scripts/build_data_manifest.py`、`scripts/rebuild_analysis.py`、`scripts/run_server_batch.py`、`config/store_classification_aliases.json`、`tests/`、`README.md`、`docs/GOOD_BAD_STORE_SAMPLE_REVIEW_V0.1.md`、`docs/DAILY_RAMP_ANALYSIS_V0.1.md`、`DECISIONS.md`、`DEVELOPMENT_LOG.md`
+- commit：见本次提交（好店样本、日级爬坡、SABC同类对标与租售比敏感性）
+- 验证方法：按 `site_ops_monthly_analysis.csv` 中分析纳入月份重算样本的月均营收、总体CV、近3月变化、新老客结构、留存率和返店频次；与 `site_benchmark.csv`、`good_store_validation.csv`、已有调研报告和飞书SABC表逐项对照；统一重建入口完整通过，数据契约0错误3警告；41项单元测试和语法检查通过。只读导出SABC表78行且分类数量核对为S4/A17/B35/C22。Excel工作簿因官方artifact-tool本机原生渲染模块不可用未生成，未改用其他表格库。
+
 ## 2026-07-18 数据身份契约与 Hanson BI 实时源评审
 
 - 类型：功能/数据治理/评审

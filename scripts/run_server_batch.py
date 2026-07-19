@@ -12,6 +12,7 @@ COMMANDS = [
     [sys.executable, "-m", "scripts.check_server_readiness"],
     [sys.executable, "-m", "scripts.extract_base"],
     [sys.executable, "-m", "scripts.extract_rent_from_feishu"],
+    [sys.executable, "-m", "scripts.export_store_classification_from_feishu"],
     [sys.executable, "-m", "scripts.export_ops_from_bi"],
     [sys.executable, "-m", "scripts.refresh_hanson_daily_ops"],
     [sys.executable, "-m", "scripts.rebuild_analysis"],

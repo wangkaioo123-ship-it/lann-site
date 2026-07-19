@@ -1,6 +1,7 @@
 import csv
 import argparse
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 
@@ -41,6 +42,17 @@ def choose_base_row(rows):
     # Duplicate IDs exist for old/new addresses. Prefer active/current records for forward-looking analysis.
     status_rank = {"运营中": 0, "在建": 1, "待建": 2, "已终止": 9}
     return sorted(rows, key=lambda r: status_rank.get(r.get("门店状态", ""), 5))[0]
+
+
+def is_opening_partial_month(opening_date, month):
+    """Return True when the contract opening month starts after day one."""
+    if not opening_date or not month:
+        return False
+    try:
+        opened = datetime.fromisoformat(str(opening_date)[:10]).date()
+    except ValueError:
+        return False
+    return opened.strftime("%Y-%m") == month and opened.day > 1
 
 
 def build(
@@ -91,6 +103,8 @@ def build(
         "营收质量备注",
         "留存率",
         "返店频次",
+        "月度Gate纳入",
+        "月度Gate排除原因",
     ]
 
     monthly = []
@@ -106,6 +120,11 @@ def build(
         rent_status = rent.get("状态", "缺租金")
         if not rent:
             rent_status = "缺租金"
+        gate_reasons = []
+        if op.get("分析纳入") == "否":
+            gate_reasons.append(op.get("质量备注") or "上游分析排除")
+        if is_opening_partial_month(base.get("合同开业日期", ""), op.get("月份", "")):
+            gate_reasons.append("开业零碎月")
         monthly.append(
             [
                 site_id,
@@ -135,6 +154,8 @@ def build(
                 op.get("质量备注", ""),
                 fmt(op.get("留存率", "")),
                 fmt(op.get("返店频次", "")),
+                "否" if gate_reasons else "是",
+                "；".join(dict.fromkeys(gate_reasons)),
             ]
         )
 
@@ -185,22 +206,23 @@ def build(
     summary = []
     for site_id, rows in sorted(by_site.items()):
         first = rows[0]
-        revenues = [num(r[7]) for r in rows]
+        eligible_rows = [r for r in rows if r[27] == "是"]
+        revenues = [num(r[7]) for r in eligible_rows]
         nonzero_revenues = [x for x in revenues if x > 0]
         revenue_sum = sum(revenues)
         active_month_count = len(nonzero_revenues)
         avg_revenue = revenue_sum / active_month_count if active_month_count else 0
         monthly_rent = num(first[8])
         ratio = monthly_rent / avg_revenue if monthly_rent and avg_revenue else ""
-        new_rows = [r for r in rows if r[11] not in ("", None)]
-        customer_rows = [r for r in rows if r[13] not in ("", None)]
+        new_rows = [r for r in eligible_rows if r[11] not in ("", None)]
+        customer_rows = [r for r in eligible_rows if r[13] not in ("", None)]
         new_sum = sum(num(r[11]) for r in new_rows)
         customer_sum = sum(num(r[13]) for r in customer_rows)
-        metric_months = sorted(r[6] for r in rows if r[11] not in ("", None) or r[13] not in ("", None))
-        avg_ticket_values = [num(r[15]) for r in rows if num(r[15]) > 0]
-        avg_therapist_prod_values = [num(r[18]) for r in rows if num(r[18]) > 0]
-        retention_values = [num(r[25]) for r in rows if len(r) > 25 and r[25] not in ("", None)]
-        return_frequency_values = [num(r[26]) for r in rows if len(r) > 26 and r[26] not in ("", None)]
+        metric_months = sorted(r[6] for r in eligible_rows if r[11] not in ("", None) or r[13] not in ("", None))
+        avg_ticket_values = [num(r[15]) for r in eligible_rows if num(r[15]) > 0]
+        avg_therapist_prod_values = [num(r[18]) for r in eligible_rows if num(r[18]) > 0]
+        retention_values = [num(r[25]) for r in eligible_rows if r[25] not in ("", None)]
+        return_frequency_values = [num(r[26]) for r in eligible_rows if r[26] not in ("", None)]
 
         if first[9] == "当年已定" and nonzero_revenues:
             usability = "可用于租售比分析"
@@ -219,7 +241,7 @@ def build(
                 first[5],
                 all_months[-12],
                 all_months[-1],
-                len(rows),
+                len(eligible_rows),
                 len(nonzero_revenues),
                 fmt(revenue_sum),
                 fmt(avg_revenue),
@@ -238,7 +260,7 @@ def build(
                     else ""
                 ),
                 usability,
-                "；".join(sorted({r[22] for r in rows if len(r) > 22 and r[22]})),
+                "；".join(sorted({r[22] for r in eligible_rows if r[22]})),
                 fmt(sum(retention_values) / len(retention_values) if retention_values else ""),
                 fmt(sum(return_frequency_values) / len(return_frequency_values) if return_frequency_values else ""),
             ]

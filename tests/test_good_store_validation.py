@@ -18,6 +18,15 @@ class GoodStoreValidationTests(unittest.TestCase):
         self.assertEqual(metrics["平均月老客数"], "40")
         self.assertEqual(metrics["老客人数占比"], "0.6667")
 
+    def test_opening_partial_month_is_not_used_in_metrics(self):
+        rows = [
+            {"月份": "2025-12", "实际营收": "10", "月度Gate纳入": "否"},
+            {"月份": "2026-01", "实际营收": "100", "月度Gate纳入": "是"},
+        ]
+        metrics = build_metrics(rows)
+        self.assertEqual(metrics["有效营收月份数"], 1)
+        self.assertEqual(metrics["平均月营收"], "100")
+
     def test_validation_uses_benchmark_window(self):
         benchmark = [{"点位ID": "L1", "门店名称": "测试店", "好店经济性Gate": "经济性达标-待完整验证", "统计月份起": "2026-02", "统计月份止": "2026-03"}]
         monthly = [

@@ -56,6 +56,9 @@ OCR 合同脚本需要额外安装：
 - `site_ops_monthly_combined.csv`：王磊月度稿 + Hanson完整月的统一经营输入。
 - `hanson_daily_quality_issues.csv`：不完整月、零营收、未映射等问题。
 - `good_store_validation.csv`：经济性达标店的客户结构、营收波动和样本限制复核表。
+- `store_2026_classification.csv`：飞书SABC讨论稿的只读本地缓存。
+- `daily_ramp_analysis.csv`：7/14/28日营收、覆盖率、工作日/周末和同SABC对标，只作趋势与预警。
+- `rent_ratio_sensitivity.csv` / `rent_ratio_sensitivity_summary.csv`：14%/15%/16%/18%阈值敏感性明细与汇总，不自动修改正式标准。
 
 `pipeline_manifest.json` 记录本轮输入输出的行数、时间范围和文件指纹，用于判断结果是否来自同一批数据。
 

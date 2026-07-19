@@ -18,6 +18,7 @@ DEFAULT_FILES = [
     "data/staging/hanson_monthly_customer_metrics.csv",
     "data/staging/hanson_revenue_trends.csv",
     "data/staging/hanson_daily_quality_issues.csv",
+    "data/staging/store_2026_classification.csv",
     "data/staging/site_ops_monthly_combined.csv",
     "config/site_identity_episodes.json",
     "data/staging/base_table_analysis.csv",
@@ -26,6 +27,9 @@ DEFAULT_FILES = [
     "data/staging/site_performance_summary_bi_feishu_rent.csv",
     "data/staging/site_benchmark.csv",
     "data/staging/good_store_validation.csv",
+    "data/staging/daily_ramp_analysis.csv",
+    "data/staging/rent_ratio_sensitivity.csv",
+    "data/staging/rent_ratio_sensitivity_summary.csv",
     "data/staging/site_performance_attribution.csv",
     "data/staging/candidate_screen_v2.csv",
 ]

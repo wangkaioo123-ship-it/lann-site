@@ -33,7 +33,14 @@ def coefficient_variation(values: list[float]) -> float | None:
 
 
 def build_metrics(rows: list[dict]) -> dict:
-    rows = sorted((row for row in rows if number(row.get("实际营收")) > 0), key=lambda row: row.get("月份", ""))
+    rows = sorted(
+        (
+            row
+            for row in rows
+            if number(row.get("实际营收")) > 0 and row.get("月度Gate纳入", "是") != "否"
+        ),
+        key=lambda row: row.get("月份", ""),
+    )
     revenues = [number(row.get("实际营收")) for row in rows]
     new_values = [number(row.get("新客数")) for row in rows if row.get("新客数") not in ("", None)]
     old_values = [number(row.get("老客数")) for row in rows if row.get("老客数") not in ("", None)]
