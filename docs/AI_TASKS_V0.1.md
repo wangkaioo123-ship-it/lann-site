@@ -11,6 +11,7 @@
 | `meeting_recap_extract` | 会议复盘提取 | 工作OS | 待设计 |
 | `decision_source_distill` | 判断源候选提取 | 工作OS | 已有规则，待标准化 |
 | `site_candidate_screen` | 候选点位初筛 | lann-site | 已有脚本，待 schema 化 |
+| `site_shadow_analysis` | 候选场地影子分析 | lann-site | 本地影子 v0.1 |
 | `site_survey_fact_extract` | 选址调研报告事实抽取 | lann-site | 已有脚本，待 schema 化 |
 | `ops_root_cause_analysis` | 经营表现归因 | lann-site | 已有数据基础，待任务化 |
 | `external_site_intel` | 外部选址情报摘要 | lann-site | 待设计 |
@@ -315,3 +316,26 @@
 
 - 决策简报格式。
 - 王凯认可样本。
+
+## 11. site_shadow_analysis
+
+目的：接收机器人整理后的候选场地资料包，在不写正式业务数据的前提下，输出供人工确认的阶段、证据、风险、客户匹配和下一步。
+
+输入：
+
+- Bot 中性输入：项目、来源文件、飞书元数据、原文件存储、语音转写状态、用户文字补充、分析请求、确认状态和禁止 dashboard 外写。
+- Site 解析后形成的资料事实、人工判断、阶段、风险和客户匹配内部分析态。
+
+输出：
+
+- 可追溯的资料事实和完整来源登记。
+- 与事实分开的人工判断。
+- 当前阶段及工程边界。
+- 不构成盈利保证的经营收益风险。
+- 客户、场地、匹配三状态独立的汇总。
+- 普通 14 天、紧急 7 天的决策期及超期未决提示。
+- 缺失信息、下一步和人工确认要求。
+
+权限级别：L1 只读 + L2 本地生成；`writeback_allowed=false`，不写飞书、dashboard 或正式业务数据。
+
+接口原则：Bot 不生成 `facts`、`judgments`、`stage_status`、`risk_assessments` 或 `customer_matches`。这些内容由 Site 解析或人工结构化；解析尚未完成时明确输出“待资料解析”。

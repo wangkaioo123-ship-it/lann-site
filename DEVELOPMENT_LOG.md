@@ -15,6 +15,86 @@
 
 ---
 
+## 2026-07-26 候选场地字段方案V0.1确认边界纠偏
+
+- 类型：数据契约/修复/测试
+- 内容：修正“只让负责人确认会改变业务状态的字段”边界。多份有效资料一致、无冲突的商场名、城市、L4/L4015a/260㎡改为`原始资料事实 + 无需确认 + confirmed_by=null`，允许工作台直接展示但不表达为负责人判断；从待核验项删除重复确认要求。`responsible_owner`改为可空的核心字段信封，因当前没有明确责任分配证据，泗泾样例设为`null/待负责人确认`，不再由“提供判断的人”推断“项目负责人”。`ownership_model`继续保持待确认。Schema和最小运行时校验器同步限制原始资料事实不得伪装成负责人确认。
+- 改动文件：`docs/SITE_FIELD_SCHEMA_V0.1.md`、`ai/schemas/site_record.v0.1.schema.json`、`scripts/validate_site_record.py`、`tests/test_site_record_schema.py`、`DEVELOPMENT_LOG.md`
+- 本地样例：`data/staging/sijing_site_record_v0.1.json`（不进入Git）
+- commit：未提交
+- 验证方法：泗泾样例通过契约校验；原有缺字段/AI伪确认负例及新增原始资料事实伪确认负例均按预期失败；字段专项 4 项、全量 72 项测试通过。
+
+## 2026-07-26 候选场地正式字段方案V0.1
+
+- 类型：数据契约/文档/测试
+- 内容：新增面向Bot→Site→未来Dashboard的最小正式记录`site_record/v0.1`，以对象识别、当前推进、关键决策条件、判断与证据四层组织22个业务字段，其中10个核心必填。每个字段统一记录值、数据层级、确认状态、确认人和来源引用，严格区分原始资料事实、AI提取候选事实、负责人确认、AI经营判断和正式业务状态；AI候选必须待负责人确认且不能伪装为负责人确认。详细PDF/OCR/工程逐项证据继续留在Site内部审核数据。泗泾真实样例填入L4/L4015a/260㎡候选、当前有效商务条件、已确认工程/经营阶段、33项工程要求与0/33商场回复、5位客户状态及负责人经营判断，阶段保持等待客户决定，不自动升级确定立项。同步列出shadow直接复用、新增压缩及延后字段，不修改现有shadow schema和解析代码，不写Dashboard或飞书。
+- 改动文件：`docs/SITE_FIELD_SCHEMA_V0.1.md`、`ai/schemas/site_record.v0.1.schema.json`、`scripts/validate_site_record.py`、`tests/test_site_record_schema.py`、`DEVELOPMENT_LOG.md`
+- 本地样例：`data/staging/sijing_site_record_v0.1.json`（不进入Git）
+- commit：未提交
+- 验证方法：泗泾样例通过契约校验；删除场地ID、当前阶段或下一动作时校验失败；AI候选伪装负责人确认时校验失败；字段与真实数据一致性检查通过，全量71项测试通过。
+
+## 2026-07-26 泗泾真实截图增量验收
+
+- 类型：功能/真实资料解析/测试
+- 内容：仅增量处理指定图片source `src_72e237745dcc5662dbd7`。最新Bot中性包中的路径、175400字节、SHA-256 `d8f958d3adf9f63011d45f403ae93528c5324c11472b7fcb941490962fa8cfe9`、2346×1080尺寸、`image/jpeg`和消息ID均校验通过。修正OCR临时结果路径，确保不会尝试在只读Bot归档目录旁写入结果。本地Windows简体中文OCR识别到明确标签“店铺编号L4015a”和“使用面积260㎡（暂定）”，两项均与PDF一致，归类为重复印证；新增事实0、不一致0。OCR未形成稳定L4标签，L4继续由PDF事实证明；低置信`L-4011b`仅进入人工核验。未判断动线、楼层优劣或经营收益，未写dashboard，未修改Bot。
+- 改动文件：`scripts/parse_site_intake_supplements.py`、`scripts/parse_site_intake_pdfs.py`、`tests/test_site_intake_supplements.py`、`docs/SITE_SHADOW_ANALYSIS_V0.1.md`、`DEVELOPMENT_LOG.md`
+- 本地输出：`data/staging/sijing_real_internal_input_v0.2.json`、`data/staging/sijing_real_pdf_review_v0.2.json`、`data/staging/sijing_real_pdf_review_v0.2.md`、`data/staging/sijing_real_shadow_analysis_v0.2.json`（均不进入Git）
+- commit：未提交
+- 验证方法：真实图片归档校验、OCR、PDF交叉对照、低置信分流及禁止Dashboard写回检查通过；图片/PDF/影子专项22项通过，全量68项测试通过。
+
+## 2026-07-26 泗泾图片来源兼容与标准工程表解析
+
+- 类型：功能/资料解析/测试
+- 内容：新增neutral input图片和工程工作簿补充解析入口。图片归档先校验路径、字节数和SHA-256，保留原图引用及飞书消息ID；本地OCR的推荐铺位、铺位号、面积和楼层等明确标签只进入待人工核验候选，低置信结果仅进入人工核验清单，不据截图判断动线、楼层优劣或盈利。工程表逐sheet读取OOXML单元格，保留sheet/行/单元格来源，并将LANN标准要求、商场回复原文和机器状态候选分层；空白或含糊回复不得自动判定满足。真实`Lann开店工程条件2024.xlsx`哈希核验通过，识别为LANN标准工程要求清单：1个工作表、33项要求、商场回复0项（覆盖率0%）、含糊项0、可由书面回复识别的关键阻断项0；层高、新排风、空调、电力、给排水、消防等17个关键要求缺少逐项书面回复。负责人确认的总体初筛通过继续保留，不等于逐项已有书面证据。当前中性包无图片source，但不列为泗泾阻断，L4/L4015a/260㎡继续由PDF证明。未写dashboard，未修改Bot。
+- 改动文件：`scripts/parse_site_intake_supplements.py`、`scripts/convert_neutral_site_input.py`、`ai/schemas/site_shadow_analysis.input.schema.json`、`tests/test_site_intake_supplements.py`、`requirements-ocr.txt`、`docs/SITE_SHADOW_ANALYSIS_V0.1.md`、`DEVELOPMENT_LOG.md`
+- 本地输出：`data/staging/sijing_real_internal_input_v0.2.json`、`data/staging/sijing_real_pdf_review_v0.2.json`、`data/staging/sijing_real_pdf_review_v0.2.md`、`data/staging/sijing_real_shadow_analysis_v0.2.json`（均不进入Git）
+- commit：未提交
+- 验证方法：真实工程工作簿哈希、结构分类、回复覆盖率、标准要求事实来源、图片OCR候选分流、低置信人工核验、禁止Dashboard写回检查通过；全量68项测试通过。
+
+## 2026-07-26 泗泾客户匹配与负责人经营判断确认
+
+- 类型：资料确认/影子分析/测试
+- 内容：录入5位意向客户的独立客户状态与泗泾场地状态：3位仅放弃泗泾花园城、继续保留LANN项目状态；2位仍在考察，原决策期限为2026-07-26，下一跟进日为2026-07-27。影子分析在期限当天标记“期限已到-待负责人跟进”，从次日起标记“超期未决-待负责人确认”，不自动判定放弃。同步录入王凯负责人经营判断：项目值得继续推进，经营亏损概率较低但存在业绩低迷可能，最终由加盟商结合风险承受能力决定；明确不构成盈利保证，项目保持“继续推进/等待客户决定”，不自动升级为确定立项。以上均与PDF事实分层。未写dashboard，未修改Bot。
+- 改动文件：`ai/schemas/site_shadow_analysis.input.schema.json`、`scripts/build_site_shadow_analysis.py`、`tests/test_site_shadow_analysis.py`、`DEVELOPMENT_LOG.md`
+- 本地输出：`data/staging/sijing_real_internal_input_v0.2.json`、`data/staging/sijing_real_pdf_review_v0.2.json`、`data/staging/sijing_real_pdf_review_v0.2.md`、`data/staging/sijing_real_shadow_analysis_v0.2.json`（均不进入Git）
+- commit：未提交
+- 验证方法：负责人确认、5位客户状态分离、期限当天与次日状态、经营风险限定语及禁止写回边界通过专项与全量测试。
+
+## 2026-07-26 泗泾当前商务条件与工程状态负责人确认
+
+- 类型：资料确认/影子分析
+- 内容：将王凯于2026-07-26确认的当前商务条件和工程阶段作为“负责人当前确认”单独记录，与PDF提案事实分层。商务条件确认为当前有效并正在按固定租金51/56/61元/㎡/月、扣率6%/7%/8%（两者取高）、物业费30元/㎡/月、推广费15元/㎡/月推进；工程状态更新为前期工程初筛已完成且暂未发现明显阻断、经营可行性现场勘察已完成且值得推进、专业工程勘察待完成、合同工程条件待签约前最终确认并写入合同。已消除商务版本有效性和泛化工程状态缺口，继续保留“电子工程条件表原文件未归档，无法逐项追溯电量、给排水、空调、消防、层高”的资料缺口。未写dashboard，未修改Bot。
+- 改动文件：`DEVELOPMENT_LOG.md`
+- 本地输出：`data/staging/sijing_real_internal_input_v0.2.json`、`data/staging/sijing_real_pdf_review_v0.2.json`、`data/staging/sijing_real_pdf_review_v0.2.md`、`data/staging/sijing_real_shadow_analysis_v0.2.json`（均不进入Git）
+- commit：未提交
+- 验证方法：重建影子分析后完成负责人确认、来源引用、阶段状态、缺口和禁止写回边界的一致性检查；全量63项测试通过。
+
+## 2026-07-26 泗泾花园城逐页诊断、OCR与表格解析增强
+
+- 类型：功能/资料解析/测试
+- 内容：在真实 PDF 第一轮拆解基础上增加逐页质量诊断和本地降级链路。77 页中 73 页触发至少一种检查并全部完成本机 Windows 简体中文 OCR；识别出 59 页以图片或复杂图形为主、35 页以表格为主、23 页 pypdf 文字层疑似乱码、21 页文字层不足，各类可重叠。改用 `pdfplumber` 作为稳定文字层和表格主解析器，保留 32 个二维表格及 OCR 行/词坐标；异常 pypdf 文字层不再单独进入事实。事实由第一轮 28 条增至 43 条且未丢失原事实，新增商场手册客流/覆盖人口口径、调研报告人口预测、足疗按摩/美容 SPA 外溢描述、区域外偏好品牌及居住/办公客群生活服务消费频次。其中报告第15页美容SPA区域内/外占比分别为4.8%/6.6%，第23页办公客群为5.2%/7.5%，均保留页面与版面识别方式。低置信“泗泾站TOP1”“5公里内无竞品”和目标铺位/品牌落位图版本一致性仅进入待人工核验，不进入正式事实。未做动线、楼层优劣或经营判断，未写 dashboard。
+- 改动文件：`scripts/parse_site_intake_pdfs.py`、`scripts/windows_ocr_page.ps1`、`tests/test_site_intake_pdf_parser.py`、`ai/schemas/site_shadow_analysis.input.schema.json`、`requirements-ocr.txt`、`docs/SITE_SHADOW_ANALYSIS_V0.1.md`、`DEVELOPMENT_LOG.md`
+- 本地输出：`data/staging/sijing_real_internal_input_v0.2.json`、`data/staging/sijing_real_pdf_review_v0.2.json`、`data/staging/sijing_real_pdf_review_v0.2.md`、`data/staging/sijing_real_shadow_analysis_v0.2.json`（均不进入 Git）
+- commit：未提交
+- 验证方法：真实 5 份 PDF 共 77 页完成逐页文字层、版面对象、表格、页面图像和 OCR 诊断；73 个降级页 OCR 成功、0 失败；渲染抽查调研报告第15页、商场手册第5/6页、租赁提案第3/4页、区块图和 L4 品牌落位图；专项测试与全量测试结果见本次任务最终汇报。
+
+## 2026-07-26 泗泾花园城真实 PDF 第一轮资料拆解
+
+- 类型：功能/资料解析/测试
+- 内容：读取 Bot 真实中性输入包并验证 `lann-site-neutral-input/v0.1` 握手，5 份 PDF 的归档路径、文件大小和 SHA-256 均与中性包一致，外写控制保持 `dashboard_allowed=false`、`dashboard_attempted=false`。新增保守型 PDF 解析入口，逐页识别文字层、只抽取带明确标签和值的项目参数、铺位信息、租赁提案和报告口径人口数据；每条事实建立“原文件名+页码”引用，不按泗泾项目名硬编码结论。真实样例生成 28 条可核验事实，确认目标铺位 L4/L4015a、暂定使用面积 260㎡及租赁提案逐年固定租金/扣率等；明确租赁提案不具法律约束力，报告人口数据未完成外部交叉验证，铺位图不产生动线/经营优劣评分。未收到 LANN 标准工程条件表、用户文字或语音转写，因此工程初筛、现场判断和客户匹配仍列为缺口。
+- 改动文件：`scripts/parse_site_intake_pdfs.py`、`tests/test_site_intake_pdf_parser.py`、`requirements-ocr.txt`、`docs/SITE_SHADOW_ANALYSIS_V0.1.md`、`DEVELOPMENT_LOG.md`
+- 本地输出：`data/staging/sijing_real_internal_input.json`、`data/staging/sijing_real_pdf_review.json`、`data/staging/sijing_real_pdf_review.md`、`data/staging/sijing_real_shadow_analysis.json`（均不进入 Git）
+- commit：未提交
+- 验证方法：真实 5 份 PDF 共 77 页完成哈希核验和逐页文字层检查；租赁提案第 3、4 页及区块图第 1 页完成渲染抽查；专项测试覆盖文本/扫描/混合分类、标签事实提取、禁止 dashboard 外写和缺口保留；全量测试与语法检查见本次任务最终汇报。
+
+## 2026-07-26 泗泾花园城候选场地影子分析 v0.1
+
+- 类型：功能/数据契约/测试
+- 内容：新增通用 `site_shadow_analysis` 任务，为 `lann-bot → lann-site → 人工确认 → lann-dashboard` 最小链路提供本地影子输出。联调评审后补充 Bot 中性输入接收层，严格按 `lann-site-neutral-input/v0.1` 接收项目、来源、原文件存储、语音转写状态、用户文字、分析请求、确认状态和禁止外写控制；Bot不再被要求生成事实、判断、阶段、风险或客户匹配。Site转换层只登记来源并生成解析缺口，未解析时保持 `facts/judgments` 为空并输出“待资料解析”，不把契约握手误报为PDF解析完成。内部结构化契约继续把原始资料、可证实事实、人工判断、阶段状态、风险、客户状态、场地匹配状态和缺失信息分层；输出保留完整来源登记、工程三阶段边界、经营收益风险限定语、客户匹配汇总、7/14天决策期、超期未决和下一步。明确铺位图只承载可证实事实，不做无证据的动线/楼层优劣评分；客户放弃场地不污染客户对LANN项目的状态；结果必须人工确认且禁止正式写回。泗泾只作为固定验收样例，脚本不按项目名称硬编码结论。
+- 改动文件：`ai/tasks/site_shadow_analysis.json`、`ai/schemas/lann_site_neutral_input.schema.json`、`ai/schemas/site_shadow_analysis.*.schema.json`、`ai/evals/site_shadow_analysis/`、`scripts/convert_neutral_site_input.py`、`scripts/build_site_shadow_analysis.py`、`tests/test_neutral_site_input.py`、`tests/test_site_shadow_analysis.py`、`docs/SITE_SHADOW_ANALYSIS_V0.1.md`、`docs/AI_TASKS_V0.1.md`、`DEVELOPMENT_LOG.md`
+- commit：未提交
+- 验证方法：新增JSON均通过解析；Bot握手专项测试覆盖来源文件接收、用户文字保留、未转写语音缺口、禁止dashboard外写、拒绝违规输入及契约转换不冒充PDF解析；原影子规则测试继续覆盖工程边界、风险表述、客户/场地状态分离、推荐顺序、7/14天期限、超期不自动放弃、非泗泾项目复用及来源引用校验。`python -m unittest discover -s tests -v` 全量54项通过；本地完成中性包转换与“待资料解析”影子输出，`facts=0`、`judgments=0`、`dashboard_allowed=false`、`writeback_allowed=false`。
+
 ## 2026-07-19 好店 / 差店样本扩展、SABC店型与日级分析协议
 
 - 类型：功能/数据分析/业务评审

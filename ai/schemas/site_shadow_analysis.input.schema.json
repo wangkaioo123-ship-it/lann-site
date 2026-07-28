@@ -1,0 +1,457 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "site_shadow_analysis input v0.1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "analysis_id",
+    "as_of_date",
+    "candidate",
+    "sources",
+    "facts",
+    "judgments",
+    "stage_status",
+    "risk_assessments",
+    "customer_matches",
+    "missing_information",
+    "intake_control"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "analysis_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "as_of_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "candidate": {
+      "type": "object",
+      "required": [
+        "candidate_id",
+        "candidate_name",
+        "city"
+      ],
+      "properties": {
+        "candidate_id": {
+          "type": "string"
+        },
+        "candidate_name": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "source_id",
+          "source_type",
+          "title",
+          "ref",
+          "availability"
+        ],
+        "properties": {
+          "source_id": {
+            "type": "string"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "商场介绍",
+              "铺位图",
+              "租赁条件",
+              "调研报告",
+              "LANN标准工程条件",
+              "语音转写",
+              "客户状态",
+              "其他"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string"
+          },
+          "availability": {
+            "type": "string",
+            "enum": [
+              "可读取",
+              "缺失",
+              "不可读取"
+            ]
+          },
+          "text_content": {
+            "type": "string",
+            "description": "中性输入中的原始文字或语音转写，仅表示待Site结构化内容。"
+          },
+          "message_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "原始飞书消息ID，用于追溯文件或图片来源。"
+          },
+          "sha256": {
+            "type": "string",
+            "description": "Bot归档文件的SHA-256。"
+          },
+          "mime_type": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "facts": {
+      "type": "array",
+      "description": "只放资料可以直接证实的事实。铺位图不得在此产生动线、楼层或生意优劣评分。",
+      "items": {
+        "type": "object",
+        "required": [
+          "fact_id",
+          "category",
+          "field",
+          "value",
+          "fact_kind",
+          "source_refs",
+          "confidence"
+        ],
+        "properties": {
+          "fact_id": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "value": {},
+          "unit": {
+            "type": "string"
+          },
+          "fact_kind": {
+            "const": "资料可证实事实"
+          },
+          "source_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "高",
+              "中",
+              "低"
+            ]
+          },
+          "recognition_method": {
+            "type": "string",
+            "description": "事实的读取方式，例如pdfplumber_text_layer、windows_media_ocr或两者交叉。"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "judgments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "judgment_id",
+          "owner",
+          "judgment_type",
+          "statement",
+          "source_refs"
+        ],
+        "properties": {
+          "judgment_id": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "judgment_type": {
+            "type": "string",
+            "enum": [
+              "经营判断",
+              "工程判断",
+              "商务判断",
+              "阶段判断",
+              "其他"
+            ]
+          },
+          "statement": {
+            "type": "string"
+          },
+          "source_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "stage_status": {
+      "type": "object",
+      "required": [
+        "workflow_stage",
+        "rent",
+        "engineering_precheck",
+        "operating_feasibility_visit",
+        "engineer_site_survey",
+        "contract_engineering_confirmation",
+        "source_refs"
+      ],
+      "properties": {
+        "workflow_stage": {
+          "type": "string"
+        },
+        "rent": {
+          "type": "string",
+          "enum": [
+            "未确认",
+            "区间已确认",
+            "已明确",
+            "超出需求范围"
+          ]
+        },
+        "engineering_precheck": {
+          "type": "string",
+          "enum": [
+            "未开始",
+            "进行中",
+            "已完成-无阻断问题",
+            "已完成-存在阻断问题"
+          ]
+        },
+        "operating_feasibility_visit": {
+          "type": "string",
+          "enum": [
+            "未开始",
+            "已完成-值得推进",
+            "已完成-不建议推进",
+            "待人工确认"
+          ]
+        },
+        "engineer_site_survey": {
+          "type": "string",
+          "enum": [
+            "未开始",
+            "已安排",
+            "已完成-无阻断问题",
+            "已完成-存在阻断问题"
+          ]
+        },
+        "contract_engineering_confirmation": {
+          "type": "string",
+          "enum": [
+            "未开始",
+            "进行中",
+            "已确认",
+            "存在未决问题"
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "risk_assessments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "risk_id",
+          "risk_type",
+          "level",
+          "statement",
+          "owner",
+          "source_refs"
+        ],
+        "properties": {
+          "risk_id": {
+            "type": "string"
+          },
+          "risk_type": {
+            "type": "string",
+            "enum": [
+              "经营收益风险",
+              "工程风险",
+              "商务风险",
+              "资料风险",
+              "其他"
+            ]
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "低",
+              "中",
+              "高",
+              "未判断"
+            ]
+          },
+          "statement": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "source_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "customer_matches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "customer_id",
+          "customer_state",
+          "site_match_state",
+          "source_refs"
+        ],
+        "properties": {
+          "customer_id": {
+            "type": "string"
+          },
+          "customer_state": {
+            "type": "string",
+            "enum": [
+              "考察中",
+              "继续考察LANN项目",
+              "已放弃LANN项目",
+              "未知"
+            ]
+          },
+          "site_match_state": {
+            "type": "string",
+            "enum": [
+              "考察该场地",
+              "已放弃该场地",
+              "已匹配",
+              "未开始"
+            ]
+          },
+          "recommended_at": {
+            "type": "string",
+            "format": "date"
+          },
+          "urgency": {
+            "type": "string",
+            "enum": [
+              "普通",
+              "紧急"
+            ]
+          },
+          "decision_deadline": {
+            "type": "string",
+            "format": "date",
+            "description": "负责人已确认的原决策期限；存在时优先于按推荐日期推算。"
+          },
+          "next_follow_up_date": {
+            "type": "string",
+            "format": "date",
+            "description": "负责人计划的下一次跟进日期，不改变客户或场地状态。"
+          },
+          "source_refs": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "missing_information": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "intake_control": {
+      "type": "object",
+      "required": [
+        "upstream_schema",
+        "project_status",
+        "source_channel",
+        "requested_action",
+        "input_summary_confirmed",
+        "confirmed_at",
+        "external_writes"
+      ],
+      "properties": {
+        "upstream_schema": {
+          "type": "string"
+        },
+        "project_status": {
+          "type": "string"
+        },
+        "source_channel": {
+          "type": "string"
+        },
+        "requested_action": {
+          "type": "string"
+        },
+        "input_summary_confirmed": {
+          "type": "boolean"
+        },
+        "confirmed_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "external_writes": {
+          "type": "object",
+          "required": [
+            "dashboard_allowed",
+            "dashboard_attempted"
+          ],
+          "properties": {
+            "dashboard_allowed": {
+              "const": false
+            },
+            "dashboard_attempted": {
+              "const": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

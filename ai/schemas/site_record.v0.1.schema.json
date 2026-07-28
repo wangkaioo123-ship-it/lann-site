@@ -1,0 +1,755 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lann.local/schemas/site_record.v0.1.schema.json",
+  "title": "LANN candidate site formal record v0.1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "site_id",
+    "mall_name",
+    "city",
+    "responsible_owner",
+    "current_stage",
+    "ownership_model",
+    "next_action",
+    "current_blockers",
+    "evidence_completeness",
+    "data_updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "site_record/v0.1"
+    },
+    "site_id": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "mall_name": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "city": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "unit": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "floor",
+                    "unit_code"
+                  ],
+                  "properties": {
+                    "floor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "unit_code": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "area_sqm": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "exclusiveMinimum": 0
+            }
+          }
+        }
+      ]
+    },
+    "responsible_owner": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "current_stage": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "enum": [
+                "资料收集中",
+                "商务初筛",
+                "工程初筛",
+                "经营可行性勘察",
+                "等待客户决定",
+                "专业工程勘察",
+                "内部审批",
+                "合同确认",
+                "确定立项",
+                "暂停",
+                "终止"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "ownership_model": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "enum": [
+                "加盟",
+                "直营",
+                "待定"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "next_action": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "next_follow_up_date": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date"
+            }
+          }
+        }
+      ]
+    },
+    "current_blockers": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            }
+          }
+        }
+      ]
+    },
+    "lease_terms": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "validity",
+                    "pricing_summary"
+                  ],
+                  "properties": {
+                    "validity": {
+                      "enum": [
+                        "当前有效",
+                        "待确认",
+                        "已失效"
+                      ]
+                    },
+                    "pricing_summary": {
+                      "type": "string"
+                    },
+                    "fixed_rent_yuan_per_sqm_month": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "period",
+                          "value"
+                        ],
+                        "properties": {
+                          "period": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "number"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "turnover_rate_percent": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "period",
+                          "value"
+                        ],
+                        "properties": {
+                          "period": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "number"
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "higher_of_fixed_or_turnover": {
+                      "type": "boolean"
+                    },
+                    "property_fee_yuan_per_sqm_month": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "promotion_fee_yuan_per_sqm_month": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "engineering_precheck": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "enum": [
+                "未开始",
+                "进行中",
+                "已完成-无明显阻断",
+                "已完成-存在阻断",
+                "待核验"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "operating_feasibility_visit": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "enum": [
+                "未开始",
+                "待确认",
+                "已完成-值得推进",
+                "已完成-不建议推进"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "engineer_site_survey": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "enum": [
+                "未开始",
+                "已安排",
+                "已完成-无阻断",
+                "已完成-存在阻断"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "branch_performance_projection": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "summary"
+                  ],
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "未提供",
+                        "测算中",
+                        "已完成-待确认",
+                        "已确认"
+                      ]
+                    },
+                    "summary": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "franchise_customer_decision": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "recommended_count",
+                    "site_declined_count",
+                    "considering_count",
+                    "overdue_pending_count"
+                  ],
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "未开始",
+                        "等待客户决定",
+                        "部分客户放弃场地",
+                        "已有客户确认",
+                        "无客户继续"
+                      ]
+                    },
+                    "recommended_count": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "site_declined_count": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "considering_count": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "overdue_pending_count": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "summary": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "internal_approval": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "enum": [
+                "未开始",
+                "进行中",
+                "已通过",
+                "未通过",
+                "待核验",
+                null
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "owner_current_judgment": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "evidence_completeness": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "type": "object",
+              "required": [
+                "level",
+                "summary"
+              ],
+              "properties": {
+                "level": {
+                  "enum": [
+                    "低",
+                    "中",
+                    "高"
+                  ]
+                },
+                "source_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "pdf_fact_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "engineering_requirement_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "merchant_reply_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "merchant_reply_coverage": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "image_evidence_status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "summary": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      ]
+    },
+    "pending_verifications": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            }
+          }
+        }
+      ]
+    },
+    "data_updated_at": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fieldEnvelope"
+        },
+        {
+          "properties": {
+            "value": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "fieldEnvelope": {
+      "type": "object",
+      "required": [
+        "value",
+        "record_layer",
+        "confirmation_status",
+        "confirmed_by",
+        "source_refs"
+      ],
+      "properties": {
+        "value": {},
+        "record_layer": {
+          "enum": [
+            "原始资料事实",
+            "AI提取候选事实",
+            "负责人确认",
+            "AI经营判断",
+            "正式业务状态"
+          ]
+        },
+        "confirmation_status": {
+          "enum": [
+            "无需确认",
+            "待负责人确认",
+            "已确认"
+          ]
+        },
+        "confirmed_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "record_layer": {
+                "const": "原始资料事实"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "confirmation_status": {
+                "const": "无需确认"
+              },
+              "confirmed_by": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "record_layer": {
+                "const": "AI提取候选事实"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "confirmation_status": {
+                "const": "待负责人确认"
+              },
+              "confirmed_by": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "record_layer": {
+                "enum": [
+                  "负责人确认",
+                  "正式业务状态"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "confirmation_status": {
+                "const": "已确认"
+              },
+              "confirmed_by": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "record_layer": {
+                "const": "AI经营判断"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "confirmation_status": {
+                "const": "无需确认"
+              },
+              "confirmed_by": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

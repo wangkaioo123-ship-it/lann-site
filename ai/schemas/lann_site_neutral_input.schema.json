@@ -1,0 +1,263 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lann-site-neutral-input/v0.1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "package_purpose",
+    "project",
+    "provenance",
+    "sources",
+    "user_notes",
+    "requested_action",
+    "confirmation",
+    "external_writes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "lann-site-neutral-input/v0.1"
+    },
+    "package_purpose": {
+      "type": "string"
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "source_channel",
+        "chat_id",
+        "created_by",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "source_channel": {
+          "const": "feishu_bot"
+        },
+        "chat_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "source_id",
+          "source_kind",
+          "original_file_name",
+          "message_id",
+          "sender",
+          "received_at",
+          "feishu_resource",
+          "storage",
+          "archive_error",
+          "transcription"
+        ],
+        "properties": {
+          "source_id": {
+            "type": "string"
+          },
+          "source_kind": {
+            "type": "string"
+          },
+          "original_file_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sender": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "received_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "feishu_resource": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "storage": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "sha256": {
+                "type": "string"
+              },
+              "bytes": {
+                "type": "integer"
+              },
+              "mime_type": {
+                "type": "string"
+              },
+              "relative_path": {
+                "type": "string"
+              }
+            }
+          },
+          "archive_error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transcription": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "status": {
+                "type": "string"
+              },
+              "text": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "error": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "user_notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "message_id",
+          "sender",
+          "received_at",
+          "text"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "string"
+          },
+          "sender": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "received_at": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "requested_action": {
+      "type": "string",
+      "enum": [
+        "site_analysis_requested",
+        "collect_sources"
+      ]
+    },
+    "confirmation": {
+      "type": "object",
+      "required": [
+        "input_summary_confirmed",
+        "confirmed_at"
+      ],
+      "properties": {
+        "input_summary_confirmed": {
+          "type": "boolean"
+        },
+        "confirmed_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "external_writes": {
+      "type": "object",
+      "required": [
+        "dashboard_allowed",
+        "dashboard_attempted"
+      ],
+      "properties": {
+        "dashboard_allowed": {
+          "const": false
+        },
+        "dashboard_attempted": {
+          "const": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,30 @@
+{
+  "task_id": "site_shadow_analysis",
+  "task_name": "候选场地影子分析",
+  "owner_project": "lann-site",
+  "purpose": "把机器人提交的候选场地资料、人工判断和客户匹配状态整理为可人工确认的影子分析结果，不写正式业务数据。",
+  "current_implementation": {
+    "neutral_converter": "scripts/convert_neutral_site_input.py",
+    "script": "scripts/build_site_shadow_analysis.py",
+    "neutral_sample_input": "ai/evals/site_shadow_analysis/sijing_neutral_input.json",
+    "sample_input": "ai/evals/site_shadow_analysis/sijing_input.json",
+    "sample_output": "data/staging/site_shadow_analysis_sijing.json"
+  },
+  "input_sources": [
+    "商场介绍",
+    "铺位图",
+    "租赁条件",
+    "调研报告",
+    "LANN标准工程条件",
+    "王凯语音转写",
+    "客户推荐与场地匹配状态"
+  ],
+  "upstream_input_schema": "ai/schemas/lann_site_neutral_input.schema.json",
+  "internal_input_schema": "ai/schemas/site_shadow_analysis.input.schema.json",
+  "output_schema": "ai/schemas/site_shadow_analysis.output.schema.json",
+  "permission_level": "L1_read + L2_generate",
+  "writeback_policy": "shadow_only_no_business_writeback",
+  "eval_dataset": "ai/evals/site_shadow_analysis",
+  "status": "local_shadow_v0.1",
+  "last_reviewed_at": "2026-07-26"
+}

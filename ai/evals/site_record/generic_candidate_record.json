@@ -1,0 +1,118 @@
+{
+  "schema_version": "site_record/v0.1",
+  "site_id": {
+    "value": "site_fixture_001",
+    "record_layer": "正式业务状态",
+    "confirmation_status": "已确认",
+    "confirmed_by": "fixture-system",
+    "source_refs": [
+      "fixture-package"
+    ]
+  },
+  "mall_name": {
+    "value": "示例商场",
+    "record_layer": "原始资料事实",
+    "confirmation_status": "无需确认",
+    "confirmed_by": null,
+    "source_refs": [
+      "fixture-document-p1"
+    ]
+  },
+  "city": {
+    "value": "示例城市",
+    "record_layer": "原始资料事实",
+    "confirmation_status": "无需确认",
+    "confirmed_by": null,
+    "source_refs": [
+      "fixture-document-p1"
+    ]
+  },
+  "unit": {
+    "value": {
+      "floor": "L2",
+      "unit_code": "L201"
+    },
+    "record_layer": "原始资料事实",
+    "confirmation_status": "无需确认",
+    "confirmed_by": null,
+    "source_refs": [
+      "fixture-plan-p1"
+    ]
+  },
+  "area_sqm": {
+    "value": 200,
+    "record_layer": "原始资料事实",
+    "confirmation_status": "无需确认",
+    "confirmed_by": null,
+    "source_refs": [
+      "fixture-plan-p1"
+    ]
+  },
+  "responsible_owner": {
+    "value": null,
+    "record_layer": "AI提取候选事实",
+    "confirmation_status": "待负责人确认",
+    "confirmed_by": null,
+    "source_refs": [
+      "fixture-package"
+    ]
+  },
+  "current_stage": {
+    "value": "资料收集中",
+    "record_layer": "正式业务状态",
+    "confirmation_status": "已确认",
+    "confirmed_by": "fixture-system",
+    "source_refs": [
+      "fixture-package"
+    ]
+  },
+  "ownership_model": {
+    "value": "待定",
+    "record_layer": "AI提取候选事实",
+    "confirmation_status": "待负责人确认",
+    "confirmed_by": null,
+    "source_refs": [
+      "fixture-package"
+    ]
+  },
+  "next_action": {
+    "value": "等待负责人确认项目负责人和场地性质",
+    "record_layer": "正式业务状态",
+    "confirmation_status": "已确认",
+    "confirmed_by": "fixture-system",
+    "source_refs": [
+      "fixture-package"
+    ]
+  },
+  "current_blockers": {
+    "value": [],
+    "record_layer": "正式业务状态",
+    "confirmation_status": "已确认",
+    "confirmed_by": "fixture-system",
+    "source_refs": [
+      "fixture-package"
+    ]
+  },
+  "evidence_completeness": {
+    "value": {
+      "level": "低",
+      "source_count": 2,
+      "summary": "仅用于验证候选记录契约，不包含真实项目资料。"
+    },
+    "record_layer": "AI经营判断",
+    "confirmation_status": "无需确认",
+    "confirmed_by": null,
+    "source_refs": [
+      "fixture-package"
+    ]
+  },
+  "data_updated_at": {
+    "value": "2026-07-26T00:00:00Z",
+    "record_layer": "正式业务状态",
+    "confirmation_status": "已确认",
+    "confirmed_by": "fixture-system",
+    "source_refs": [
+      "fixture-package"
+    ]
+  }
+}

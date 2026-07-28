@@ -1,0 +1,213 @@
+{
+  "schema_version": "0.1",
+  "analysis_id": "shadow-sijing-20260726",
+  "as_of_date": "2026-07-26",
+  "candidate": {
+    "candidate_id": "recvnQjYoi2Hl0",
+    "candidate_name": "泗泾招商花园城",
+    "city": "上海"
+  },
+  "sources": [
+    {
+      "source_id": "mall-intro",
+      "source_type": "商场介绍",
+      "title": "商场介绍PDF（验收引用）",
+      "ref": "fixture://sijing/mall-intro.pdf",
+      "availability": "可读取"
+    },
+    {
+      "source_id": "unit-plan",
+      "source_type": "铺位图",
+      "title": "铺位图PDF（验收引用）",
+      "ref": "fixture://sijing/unit-plan.pdf",
+      "availability": "可读取"
+    },
+    {
+      "source_id": "lease-terms",
+      "source_type": "租赁条件",
+      "title": "租赁条件PDF（验收引用）",
+      "ref": "fixture://sijing/lease-terms.pdf",
+      "availability": "可读取"
+    },
+    {
+      "source_id": "survey-report",
+      "source_type": "调研报告",
+      "title": "调研报告PDF（验收引用）",
+      "ref": "fixture://sijing/survey-report.pdf",
+      "availability": "可读取"
+    },
+    {
+      "source_id": "engineering-standard",
+      "source_type": "LANN标准工程条件",
+      "title": "LANN标准工程条件表（验收引用）",
+      "ref": "fixture://sijing/engineering-standard.xlsx",
+      "availability": "可读取"
+    },
+    {
+      "source_id": "kai-transcript",
+      "source_type": "语音转写",
+      "title": "王凯语音补充转写",
+      "ref": "fixture://sijing/kai-transcript.txt",
+      "availability": "可读取"
+    },
+    {
+      "source_id": "customer-status",
+      "source_type": "客户状态",
+      "title": "客户推荐与匹配状态样例",
+      "ref": "fixture://sijing/customer-status.json",
+      "availability": "可读取"
+    }
+  ],
+  "facts": [
+    {
+      "fact_id": "fact-rent-known",
+      "category": "租赁条件",
+      "field": "租金状态",
+      "value": "已明确",
+      "fact_kind": "资料可证实事实",
+      "source_refs": [
+        "lease-terms"
+      ],
+      "confidence": "高"
+    },
+    {
+      "fact_id": "fact-plan-unit",
+      "category": "铺位图",
+      "field": "目标铺位已在图中标注",
+      "value": true,
+      "fact_kind": "资料可证实事实",
+      "source_refs": [
+        "unit-plan"
+      ],
+      "confidence": "高"
+    },
+    {
+      "fact_id": "fact-engineering-standard",
+      "category": "工程",
+      "field": "已提供LANN标准工程条件表",
+      "value": true,
+      "fact_kind": "资料可证实事实",
+      "source_refs": [
+        "engineering-standard"
+      ],
+      "confidence": "高"
+    }
+  ],
+  "judgments": [
+    {
+      "judgment_id": "judgment-operating-visit",
+      "owner": "王凯与分公司总经理",
+      "judgment_type": "经营判断",
+      "statement": "已完成经营可行性现场勘察，当前判断值得推进。",
+      "source_refs": [
+        "kai-transcript",
+        "survey-report"
+      ]
+    },
+    {
+      "judgment_id": "judgment-engineering-precheck",
+      "owner": "前期工程沟通",
+      "judgment_type": "工程判断",
+      "statement": "前期工程初筛完成，当前未发现阻断问题；专业工程人员尚未现场勘察。",
+      "source_refs": [
+        "kai-transcript",
+        "engineering-standard"
+      ]
+    }
+  ],
+  "stage_status": {
+    "workflow_stage": "场地推进中",
+    "rent": "已明确",
+    "engineering_precheck": "已完成-无阻断问题",
+    "operating_feasibility_visit": "已完成-值得推进",
+    "engineer_site_survey": "未开始",
+    "contract_engineering_confirmation": "未开始",
+    "source_refs": [
+      "lease-terms",
+      "engineering-standard",
+      "survey-report",
+      "kai-transcript"
+    ]
+  },
+  "risk_assessments": [
+    {
+      "risk_id": "risk-operating-return",
+      "risk_type": "经营收益风险",
+      "level": "低",
+      "statement": "当前判断亏损概率较低，但仍可能出现业绩低迷。",
+      "owner": "王凯",
+      "source_refs": [
+        "kai-transcript"
+      ]
+    }
+  ],
+  "customer_matches": [
+    {
+      "customer_id": "customer-01",
+      "customer_state": "继续考察LANN项目",
+      "site_match_state": "已放弃该场地",
+      "recommended_at": "2026-07-08",
+      "urgency": "普通",
+      "source_refs": [
+        "customer-status"
+      ]
+    },
+    {
+      "customer_id": "customer-02",
+      "customer_state": "继续考察LANN项目",
+      "site_match_state": "已放弃该场地",
+      "recommended_at": "2026-07-09",
+      "urgency": "普通",
+      "source_refs": [
+        "customer-status"
+      ]
+    },
+    {
+      "customer_id": "customer-03",
+      "customer_state": "继续考察LANN项目",
+      "site_match_state": "已放弃该场地",
+      "recommended_at": "2026-07-10",
+      "urgency": "普通",
+      "source_refs": [
+        "customer-status"
+      ]
+    },
+    {
+      "customer_id": "customer-04",
+      "customer_state": "考察中",
+      "site_match_state": "考察该场地",
+      "recommended_at": "2026-07-20",
+      "urgency": "普通",
+      "source_refs": [
+        "customer-status"
+      ]
+    },
+    {
+      "customer_id": "customer-05",
+      "customer_state": "考察中",
+      "site_match_state": "考察该场地",
+      "recommended_at": "2026-07-22",
+      "urgency": "紧急",
+      "source_refs": [
+        "customer-status"
+      ]
+    }
+  ],
+  "missing_information": [
+    "专业工程人员现场勘察结论",
+    "签约前最终工程条件",
+    "合同工程责任与条款"
+  ],
+  "intake_control": {
+    "upstream_schema": "manual-structured-fixture/v0.1",
+    "project_status": "ready_for_lann_site",
+    "source_channel": "固定验收样例",
+    "requested_action": "site_analysis_requested",
+    "input_summary_confirmed": true,
+    "confirmed_at": "2026-07-26T00:00:00.000Z",
+    "external_writes": {
+      "dashboard_allowed": false,
+      "dashboard_attempted": false
+    }
+  }
+}
