@@ -58,7 +58,7 @@
     ]
   },
   "current_stage": {
-    "value": "资料收集中",
+    "value": "待研判",
     "record_layer": "正式业务状态",
     "confirmation_status": "已确认",
     "confirmed_by": "fixture-system",

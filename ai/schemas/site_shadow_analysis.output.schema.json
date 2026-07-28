@@ -144,6 +144,21 @@
     },
     "current_stage": {
       "type": "object",
+      "properties": {
+        "workflow_stage": {
+          "type": "string",
+          "enum": [
+            "待研判",
+            "招商接洽",
+            "条件核验",
+            "可推荐",
+            "租赁合约推进",
+            "已签约",
+            "已开业",
+            "暂缓关闭"
+          ]
+        }
+      },
       "required": [
         "workflow_stage",
         "rent",

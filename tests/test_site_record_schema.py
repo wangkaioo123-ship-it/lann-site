@@ -45,6 +45,7 @@ class SiteRecordSchemaTests(unittest.TestCase):
         self.assertEqual(
             self.sample["ownership_model"]["confirmation_status"], "待负责人确认"
         )
+        self.assertEqual(self.sample["current_stage"]["value"], "待研判")
 
     def test_missing_object_id_stage_or_next_action_fails(self):
         for field in ("site_id", "current_stage", "next_action"):
@@ -77,6 +78,34 @@ class SiteRecordSchemaTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "原始资料事实不得伪装成负责人确认"):
             validate_site_record(record, self.schema)
+
+    def test_customer_match_state_cannot_be_used_as_site_stage(self):
+        record = copy.deepcopy(self.sample)
+        record["current_stage"]["value"] = "等待客户决定"
+
+        with self.assertRaisesRegex(ValueError, "不在允许枚举中"):
+            validate_site_record(record, self.schema)
+
+    def test_dashboard_site_stage_options_are_exact(self):
+        stage_schema = self.schema["properties"]["current_stage"]
+        value_spec = next(
+            item["properties"]["value"]
+            for item in stage_schema["allOf"]
+            if "properties" in item
+        )
+        self.assertEqual(
+            value_spec["enum"],
+            [
+                "待研判",
+                "招商接洽",
+                "条件核验",
+                "可推荐",
+                "租赁合约推进",
+                "已签约",
+                "已开业",
+                "暂缓关闭",
+            ],
+        )
 
 
 if __name__ == "__main__":

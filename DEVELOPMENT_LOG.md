@@ -15,6 +15,15 @@
 
 ---
 
+## 2026-07-28 Site场地阶段与客户匹配状态收口
+
+- 类型：数据契约/修复/测试
+- 内容：将`site_record/v0.1`与影子分析的`current_stage/workflow_stage`统一限制为Dashboard现行8个场地阶段；泗泾场地阶段确认为“可推荐”，两位客户仍在考察只保留在`franchise_customer_decision`匹配摘要，不再影响场地阶段。中性包接收和PDF解析默认保持“待研判”，解析资料本身不推进业务阶段。场地下一动作、下一跟进日和固有卡点与客户跟进分离；会改变业务推进的AI建议继续使用既有字段信封表达为“AI提取候选事实/待负责人确认”，未新增同步架构。文档明确Dashboard只消费场地最小字段，客观无冲突事实可补齐、冲突不覆盖、推进字段只展示待确认更新建议，客户及详细证据留在各自系统。
+- 改动文件：`ai/schemas/site_record.v0.1.schema.json`、`ai/schemas/site_shadow_analysis.input.schema.json`、`ai/schemas/site_shadow_analysis.output.schema.json`、`ai/evals/site_record/generic_candidate_record.json`、`ai/evals/site_shadow_analysis/sijing_input.json`、`ai/evals/site_shadow_analysis/README.md`、`scripts/build_site_shadow_analysis.py`、`scripts/convert_neutral_site_input.py`、`scripts/parse_site_intake_pdfs.py`、`tests/test_site_record_schema.py`、`tests/test_site_shadow_analysis.py`、`docs/SITE_FIELD_SCHEMA_V0.1.md`、`docs/SITE_SHADOW_ANALYSIS_V0.1.md`、`DEVELOPMENT_LOG.md`
+- 本地样例：`data/staging/sijing_site_record_v0.1.json`同步修正为“可推荐”，场地下一动作改为待负责人确认建议并移除客户跟进日期；继续不进入Git。
+- commit：本次聚焦本地提交（未push）
+- 验证方法：泗泾本地候选通过`site_record/v0.1`校验；场地/匹配专项21项通过；全量75项测试通过；JSON、Python语法及Git差异检查通过。
+
 ## 2026-07-26 候选场地字段方案V0.1确认边界纠偏
 
 - 类型：数据契约/修复/测试

@@ -57,7 +57,7 @@ Schema：`ai/schemas/site_shadow_analysis.input.schema.json`
 | `sources` | 原始资料及引用，记录可读取、缺失或不可读取 |
 | `facts` | 资料可直接证实的事实，每条必须引用来源 |
 | `judgments` | 王凯、分公司、工程或商务人员的判断，不能混入事实 |
-| `stage_status` | 租金、工程初筛、经营勘察、专业工程勘察、合同工程确认分别记录 |
+| `stage_status` | 场地阶段、租金、工程初筛、分公司现场经营勘察、专业工程勘察、合同工程确认分别记录 |
 | `risk_assessments` | 风险类型、等级、原始表述、判断人和来源 |
 | `customer_matches` | 客户状态与场地匹配状态分开记录 |
 | `missing_information` | 当前仍缺的资料或结论 |
@@ -82,6 +82,8 @@ Schema：`ai/schemas/site_shadow_analysis.output.schema.json`
 - `human_confirmation_required=true`。
 - `writeback_allowed=false`。
 
+`current_stage.workflow_stage`只允许使用Dashboard现行场地阶段：待研判、招商接洽、条件核验、可推荐、租赁合约推进、已签约、已开业、暂缓关闭。客户决定、匹配结果和超期状态不得映射为场地阶段。
+
 ## 客户与匹配规则
 
 - 客户状态、场地状态和匹配状态独立。
@@ -89,6 +91,7 @@ Schema：`ai/schemas/site_shadow_analysis.output.schema.json`
 - 仍在考察该场地的客户按推荐时间排序。
 - 普通决策期 14 天，紧急项目 7 天。
 - 到期后标记“超期未决-待负责人确认”，不得自动写为“放弃”。
+- 客户明细、客户—场地关系和反馈属于匹配记录；Site只生成隔离的匹配摘要，不以此改变场地阶段。
 
 ## 工程边界
 

@@ -900,7 +900,9 @@ def parse_neutral_pdf_package(
     used_page_ids = {ref for fact in facts for ref in fact["source_refs"]}
     internal["sources"].extend(page_sources[page_id] for page_id in sorted(used_page_ids))
     internal["facts"] = facts
-    internal["stage_status"]["workflow_stage"] = "真实资料已解析，待人工确认"
+    # Parsing source files improves evidence coverage; it must not advance the
+    # formal site stage. A later owner-confirmed workflow may update this value.
+    internal["stage_status"]["workflow_stage"] = "待研判"
     if any(fact["field"] == "项目所在板块" and "上海" in fact["value"] for fact in facts):
         internal["candidate"]["city"] = "上海"
     internal["missing_information"] = [

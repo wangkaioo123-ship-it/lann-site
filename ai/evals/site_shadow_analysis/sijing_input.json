@@ -116,7 +116,7 @@
     }
   ],
   "stage_status": {
-    "workflow_stage": "场地推进中",
+    "workflow_stage": "可推荐",
     "rent": "已明确",
     "engineering_precheck": "已完成-无阻断问题",
     "operating_feasibility_visit": "已完成-值得推进",

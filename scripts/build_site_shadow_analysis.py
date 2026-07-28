@@ -11,6 +11,16 @@ from typing import Any
 
 NORMAL_DECISION_DAYS = 14
 URGENT_DECISION_DAYS = 7
+SITE_STAGE_OPTIONS = {
+    "待研判",
+    "招商接洽",
+    "条件核验",
+    "可推荐",
+    "租赁合约推进",
+    "已签约",
+    "已开业",
+    "暂缓关闭",
+}
 
 
 def parse_date(value: str) -> date:
@@ -56,6 +66,12 @@ def validate_packet(packet: dict[str, Any]) -> None:
     for field in ("candidate_id", "candidate_name", "city"):
         if not str(candidate.get(field, "")).strip():
             raise ValueError(f"candidate.{field}不能为空")
+    workflow_stage = packet["stage_status"].get("workflow_stage")
+    if workflow_stage not in SITE_STAGE_OPTIONS:
+        raise ValueError(
+            "stage_status.workflow_stage必须使用Dashboard场地阶段，"
+            "不得使用客户或匹配状态"
+        )
 
     unique_ids(packet["sources"], "source_id", "资料来源")
     unique_ids(packet["facts"], "fact_id", "资料事实")

@@ -25,6 +25,7 @@ class SiteShadowAnalysisTests(unittest.TestCase):
         )
         self.assertEqual(result["current_stage"]["engineer_site_survey"], "未开始")
         self.assertEqual(result["current_stage"]["contract_engineering_confirmation"], "未开始")
+        self.assertEqual(result["current_stage"]["workflow_stage"], "可推荐")
         self.assertIn("不构成盈利保证", result["risk_assessments"][0]["qualification"])
         self.assertFalse(result["writeback_allowed"])
         self.assertTrue(result["human_confirmation_required"])
@@ -40,6 +41,7 @@ class SiteShadowAnalysisTests(unittest.TestCase):
         self.assertTrue(all(row["customer_state"] == "继续考察LANN项目" for row in declined))
         self.assertEqual(result["matching_summary"]["recommended_count"], 5)
         self.assertEqual(result["matching_summary"]["considering_count"], 2)
+        self.assertEqual(result["current_stage"]["workflow_stage"], "可推荐")
 
     def test_considering_customers_are_ordered_and_use_correct_deadline(self):
         result = build_analysis(load_fixture())
@@ -67,6 +69,7 @@ class SiteShadowAnalysisTests(unittest.TestCase):
         self.assertTrue(all(row["site_match_state"] == "考察该场地" for row in considering))
         self.assertTrue(all(row["customer_state"] == "考察中" for row in considering))
         self.assertIn("由负责人确认超期未决客户状态，不自动写为放弃", result["next_actions"])
+        self.assertEqual(result["current_stage"]["workflow_stage"], "可推荐")
 
     def test_explicit_deadline_supports_due_follow_up_and_next_day_overdue(self):
         packet = load_fixture()
@@ -124,6 +127,13 @@ class SiteShadowAnalysisTests(unittest.TestCase):
         packet["intake_control"]["external_writes"]["dashboard_allowed"] = True
 
         with self.assertRaisesRegex(ValueError, "不得允许dashboard写入"):
+            build_analysis(packet)
+
+    def test_customer_match_state_cannot_be_used_as_site_stage(self):
+        packet = load_fixture()
+        packet["stage_status"]["workflow_stage"] = "等待客户决定"
+
+        with self.assertRaisesRegex(ValueError, "不得使用客户或匹配状态"):
             build_analysis(packet)
 
 

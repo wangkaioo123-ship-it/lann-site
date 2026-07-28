@@ -186,7 +186,7 @@ def convert_neutral_packet(packet: dict[str, Any]) -> dict[str, Any]:
         "facts": [],
         "judgments": [],
         "stage_status": {
-            "workflow_stage": "中性资料已接收，待lann-site解析",
+            "workflow_stage": "待研判",
             "rent": "未确认",
             "engineering_precheck": "未开始",
             "operating_feasibility_visit": "待人工确认",

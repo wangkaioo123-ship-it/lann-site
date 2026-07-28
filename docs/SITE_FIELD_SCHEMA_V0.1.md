@@ -8,7 +8,7 @@
 
 本版本只保留22个业务字段。PDF逐页文字、OCR坐标、工程表33项明细、截图全文和完整来源登记继续留在lann-site内部审核数据，不复制进正式记录。
 
-本轮不写Dashboard、不修改飞书字段。`site_record/v0.1`只是未来工作台字段的契约草案和真实样例。
+本轮不写Dashboard、不修改飞书字段。`site_record/v0.1`是Site候选交接契约和真实样例；Dashboard只消费其中明确列出的场地最小字段，不复制Site的完整分析记录。
 
 ## 2. 五层数据必须分开
 
@@ -53,11 +53,11 @@ Schema强制约束：
 
 | key | 中文名 | 类型 | 核心必填 | 数据来源/事实源 | 谁可以确认 | 何时显示 | AI自动写入 |
 |---|---|---|---:|---|---|---|---|
-| `current_stage` | 当前阶段 | enum | 是 | 已确认的商务、工程、客户和审批状态 | 项目负责人 | 始终 | AI只能建议，不能推进阶段 |
+| `current_stage` | 场地当前阶段 | enum：待研判/招商接洽/条件核验/可推荐/租赁合约推进/已签约/已开业/暂缓关闭 | 是 | 已确认的场地商务、工程和审批状态 | 项目负责人 | 始终 | AI只能建议，不能推进阶段；客户匹配状态不得写入 |
 | `ownership_model` | 场地性质 | enum：加盟/直营/待定 | 是 | 公司规划、项目安排 | 王凯/总经办 | 始终 | 无确认时只能写“待定”候选 |
 | `next_action` | 下一动作 | string | 是 | 当前阶段和负责人计划 | 项目负责人 | 始终 | AI可建议，负责人确认后正式写入 |
-| `next_follow_up_date` | 下一跟进日 | date/null | 否 | 负责人跟进计划 | 项目负责人 | 存在时间承诺时 | AI可提醒，不得自行延期 |
-| `current_blockers` | 当前阻断 | string[] | 是 | 工程/商务/客户/审批的已确认阻断 | 对应业务负责人 | 始终；无阻断显示空数组 | AI可提候选，不得把资料缺口自动升级为业务阻断 |
+| `next_follow_up_date` | 场地下一跟进日 | date/null | 否 | 场地推进计划 | 项目负责人 | 存在时间承诺时 | AI可提醒，不得自行延期；客户跟进日期留在匹配表 |
+| `current_blockers` | 场地固有卡点 | string[] | 是 | 租赁、物业或工程等场地自身的已确认阻断 | 对应业务负责人 | 始终；无阻断显示空数组 | AI可提候选，不得把客户状态、资料缺口或流程等待自动升级为场地卡点 |
 
 ### 3.3 关键决策条件（7个）
 
@@ -65,10 +65,10 @@ Schema强制约束：
 |---|---|---|---:|---|---|---|---|
 | `lease_terms` | 当前租赁商务摘要 | object/null | 否 | 租赁提案、最新谈判确认 | 王凯/商务负责人 | 有报价或谈判条件后 | AI只能提取候选；有效性必须人工确认 |
 | `engineering_precheck` | 前期工程初筛 | enum | 否 | 电子工程表核对、负责人确认 | 工程负责人/项目负责人 | 完成初筛后 | AI不能自行判定通过 |
-| `operating_feasibility_visit` | 经营可行性勘察 | enum | 否 | 现场勘察记录 | 王凯/分公司总经理 | 完成现场经营勘察后 | AI不能替代现场判断 |
+| `operating_feasibility_visit` | 分公司现场经营勘察 | enum | 否 | 现场勘察记录 | 王凯/分公司总经理 | 完成现场经营勘察后 | AI不能替代现场判断 |
 | `engineer_site_survey` | 专业工程勘察 | enum | 否 | 工程人员现场勘察 | 工程负责人 | 安排或完成专业勘察后 | AI只能提醒与归集结论 |
 | `branch_performance_projection` | 分公司业绩测算 | object/null：状态、摘要 | 否 | 分公司测算表 | 分公司总经理/项目负责人 | 有测算任务后 | AI可生成候选摘要，不得确认测算 |
-| `franchise_customer_decision` | 加盟商务/客户决定 | object/null：状态与人数汇总 | 否 | 客户推荐及跟进记录 | 项目负责人 | 加盟项目开始推荐客户后 | AI可算人数和超期；不得自动判定放弃 |
+| `franchise_customer_decision` | 客户—场地匹配摘要 | object/null：状态与人数汇总 | 否 | 匹配表，不在场地表维护客户明细 | 匹配负责人 | 存在场地匹配记录后 | AI可从匹配表计算人数和超期；不得自动判定放弃，也不得驱动场地阶段 |
 | `internal_approval` | 内部审批 | enum/null | 否 | 公司正式审批记录 | 有权审批人 | 发起审批后 | AI不得通过或否决 |
 
 ### 3.4 判断与证据（4个）
@@ -87,10 +87,11 @@ Schema强制约束：
 - 商场名、城市、L4/L4015a/260㎡已被多份有效资料一致证明且没有冲突，记录为“原始资料事实/无需确认”，可以展示但不表达为负责人判断。
 - 当前没有项目责任分配证据，`responsible_owner.value=null`并保持待负责人确认；不能因为王凯提供了业务判断就推断他是项目负责人。
 - `ownership_model`继续保持“AI提取候选事实/待负责人确认”，因为加盟/直营/待定会改变后续业务路径。
-- 当前商务条件、工程初筛、经营勘察、客户状态和负责人经营判断已有王凯确认，可进入负责人确认或正式业务状态层。
+- 当前商务条件、工程初筛、分公司现场经营勘察和负责人经营判断已有王凯确认，可进入负责人确认或正式业务状态层。
 - 33项工程标准要求属于原始资料事实；商场回复0/33意味着缺少逐项书面证据，不代表33项均不满足，也不推翻负责人确认的总体初筛通过。
-- 两位客户在2026-07-26期限已到，2026-07-27起只提示超期未决，不自动判定放弃。
-- 项目阶段保持“等待客户决定”，不自动升级为“确定立项”。
+- 三位客户只放弃该场地、两位仍在考察的结论只保留为`franchise_customer_decision`匹配摘要；客户明细和跟进日期属于匹配表。
+- 泗泾场地阶段为“可推荐”。客户是否决定不改变场地阶段，也不自动升级为“租赁合约推进”。
+- 当前场地下一动作“安排专业工程人员现场勘察，并补充分公司业绩测算”为待负责人确认的更新建议，不伪装成已确认业务动作。
 
 ## 5. 与`site_shadow_analysis`的关系
 
@@ -99,9 +100,9 @@ Schema强制约束：
 | 正式字段 | shadow来源 |
 |---|---|
 | `site_id`,`mall_name`,`city` | `candidate` |
-| `current_stage` | `current_stage.workflow_stage/summary` |
+| `current_stage` | `current_stage.workflow_stage`；只接受Dashboard场地阶段枚举，`summary`仅作Site解释 |
 | `engineering_precheck`,`operating_feasibility_visit`,`engineer_site_survey` | `current_stage`同名状态 |
-| `franchise_customer_decision` | `matching_summary`与`customer_matches` |
+| `franchise_customer_decision` | 匹配表的`matching_summary`，只作隔离摘要，不复制客户资料 |
 | `owner_current_judgment` | `owner_judgments` |
 | `current_blockers`,`pending_verifications` | `missing_information`与风险/人工核验结果，经人工区分 |
 | `next_action` | `next_actions`，选择后由负责人确认 |
@@ -116,14 +117,14 @@ Schema强制约束：
 - `evidence_completeness`：由来源数量、PDF事实、工程回复覆盖、图片对照和缺口压缩形成。
 - `unit`,`area_sqm`：从多来源一致的内部证据事实压缩为可直接展示的原始资料事实，不复制全部PDF/OCR细节。
 - `responsible_owner`：只能来自明确责任分配；没有证据时保留空值。
-- `next_follow_up_date`：由负责人跟进计划形成。
+- `next_follow_up_date`：只由场地推进计划形成；客户跟进日不进入场地记录。
 
 ### 5.3 明确延后
 
 - PDF逐页文字、OCR全文/坐标、图片原文、工程33项逐行详情。
 - 外部商圈、人流、竞品、人口、租金市场基准和地图可达性。
 - 详细财务模型、租售比敏感性、回本周期和现金流。
-- 客户个人明细与隐私数据；正式记录只保留汇总，明细留在受控业务系统。
+- 客户个人明细与隐私数据；Site候选只保留来自匹配表的隔离汇总，Dashboard场地表不消费该汇总。
 - Dashboard展示组件、飞书字段创建、自动写回、审批流和通知自动化。
 
 ## 6. 三项目复用方式
@@ -134,4 +135,12 @@ Schema强制约束：
 2. Site填入无冲突的原始资料事实、AI候选事实、证据完整度和待核验项；
 3. 负责人只确认会改变业务状态的字段；
 4. 未提供的数据保持`null/待核验`；
-5. Dashboard未来只消费`site_record/v0.1`，详细证据按`source_refs`回到Site审核数据。
+5. Dashboard未来只消费`site_record/v0.1`中的场地最小字段，详细证据按`source_refs`回到Site审核数据。
+
+## 7. Dashboard最小交接规则
+
+- 可自动补齐：`site_id`以及无冲突的`原始资料事实/无需确认`对象字段。Dashboard已有不同值时不覆盖，转为冲突待核验。
+- 仅作更新建议：`current_stage`、`next_action`、`next_follow_up_date`、`current_blockers`及其他会改变业务推进的字段。若Site输出层级为`AI提取候选事实/待负责人确认`，Dashboard只能展示建议，不能修改正式记录。
+- 可展示的已确认场地结论：租赁商务、工程初筛、分公司现场经营勘察、专业工程勘察、业绩测算、内部审批和负责人当前判断；是否写入正式字段仍由Dashboard按权限处理。
+- 不进入Dashboard场地表：客户资料、客户—场地关系、客户反馈、`franchise_customer_decision`匹配摘要、PDF/OCR明细、工程逐项证据、AI计算过程。
+- Site本阶段只产出候选交接文件，不调用Dashboard或飞书写入接口。
