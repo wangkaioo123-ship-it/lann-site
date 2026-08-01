@@ -15,6 +15,14 @@
 
 ---
 
+## 2026-08-01 Site影子分析到Dashboard候选记录生成闭环
+
+- 类型：功能/数据契约/测试
+- 内容：新增统一候选记录生成器，将Site影子分析压缩为`site_record/v0.1`待审阅文件。多来源一致的铺位、楼层和面积可作为资料事实进入候选；冲突值不写入并转为待核验。场地阶段、负责人、场地性质、下一动作和工程状态继续保持负责人确认边界，不调用Dashboard、不修改飞书字段、不自动创建工作台字段。
+- 改动文件：`scripts/build_site_record_candidate.py`、`tests/test_site_record_candidate_builder.py`、`docs/SITE_FIELD_SCHEMA_V0.1.md`、`DEVELOPMENT_LOG.md`
+- commit：本次提交
+- 验证方法：候选生成专项测试、`site_record/v0.1`契约校验、Site全量测试及Git差异检查。
+
 ## 2026-07-28 Site场地阶段与客户匹配状态收口
 
 - 类型：数据契约/修复/测试
