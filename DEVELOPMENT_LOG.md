@@ -376,3 +376,11 @@
 - 内容：新增 `scripts/run_new_store_handoff.py`，把 Bot 已确认的选址资料包按固定顺序完成 PDF/补充资料解析、Site 影子分析、`site_record/v0.1` 候选生成，并可选择调用 Dashboard 既有候选导入脚本。未确认资料包默认拒绝处理；候选导入后仍需负责人确认，不自动写入正式场地。
 - 改动文件：`scripts/run_new_store_handoff.py`、`tests/test_new_store_handoff.py`、`README.md`、`DEVELOPMENT_LOG.md`
 - 验证方法：运行 `python -m unittest tests.test_new_store_handoff`；再用泗泾花园城真实审核数据运行候选生成和 Dashboard 本地候选导入。
+
+## 2026-08-02 新店增长三场地端到端验收
+
+- 类型：真实业务验收/跨项目闭环
+- 内容：使用泗泾花园城、湖滨in77、宝山万象汇三个不同成熟度场地验证候选交接。泗泾验证成熟资料与既有审核候选；湖滨验证已有正式场地的名称与城市关联；宝山验证资料稀疏时仍可进入待研判候选，且不得误关联泗泾。三条候选均进入 Dashboard 本地候选缓冲区，重复导入为更新而非重复创建，正式场地写入仍保持关闭。
+- 验收结果：湖滨与已有“湖滨in77”匹配分 1.0、建议关联；宝山与泗泾仅同城、匹配分 0.25、不建议关联；本地候选共 3 条，分别为可推荐、招商接洽、待研判。
+- 发现并隔离的问题：真实 Bot 泗泾资料包中混入两条宝山文字说明。Site 正确将其暴露为待核验，但该包不再用于正式导入；项目归属修复在 `lann-work-bot` 单独完成。
+- 验证方法：`python -m unittest tests.test_new_store_handoff tests.test_site_record_candidate_builder tests.test_site_shadow_analysis` 共 18 项通过；Dashboard `node scripts/verify_site_intake.js` 通过；三候选重复导入均返回 `updated`。
