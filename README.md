@@ -81,3 +81,24 @@ OCR 合同脚本需要额外安装：
 - 第一阶段先解释历史，不直接预测新店。
 - “好店达标 Gate”与“归因研究样本”必须分层，当前代码中的正向样本不等同于正式好店结论。
 - lann-site 不承载飞书机器人、加盟服务流程或 dashboard 产品功能。
+# 新店增长候选交接
+
+Bot 资料摘要经负责人确认后，可用统一入口依次完成资料解析、Site 影子分析和 Dashboard 候选记录生成：
+
+```powershell
+python -m scripts.run_new_store_handoff `
+  --input-package C:\path\to\input-package.json `
+  --storage-root C:\path\to\site-intake `
+  --output-dir data\staging\handoff `
+  --enable-ocr
+```
+
+需要同时导入本机 Dashboard 候选缓冲区时增加：
+
+```powershell
+  --import-dashboard `
+  --dashboard-repo C:\Work\Projects\lann-dashboard `
+  --operator 王凯
+```
+
+导入后仍需负责人在工作台确认，候选不会自动成为正式场地。

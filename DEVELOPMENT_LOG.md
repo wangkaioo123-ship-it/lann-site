@@ -370,3 +370,9 @@
 - 改动文件：CLAUDE.md（重写）、DECISIONS.md（新建）、DEVELOPMENT_LOG.md（新建）
 - commit：待提交
 - 验证方法：用户 review 三份文档内容是否符合预期
+# 2026-08-02 新店增长候选统一交接入口
+
+- 类型：跨项目最小闭环
+- 内容：新增 `scripts/run_new_store_handoff.py`，把 Bot 已确认的选址资料包按固定顺序完成 PDF/补充资料解析、Site 影子分析、`site_record/v0.1` 候选生成，并可选择调用 Dashboard 既有候选导入脚本。未确认资料包默认拒绝处理；候选导入后仍需负责人确认，不自动写入正式场地。
+- 改动文件：`scripts/run_new_store_handoff.py`、`tests/test_new_store_handoff.py`、`README.md`、`DEVELOPMENT_LOG.md`
+- 验证方法：运行 `python -m unittest tests.test_new_store_handoff`；再用泗泾花园城真实审核数据运行候选生成和 Dashboard 本地候选导入。
