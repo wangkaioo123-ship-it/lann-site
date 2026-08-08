@@ -15,6 +15,13 @@
 
 ---
 
+## 2026-08-08：选址资料只读初审
+
+- 类型：功能 / 安全边界
+- 内容：未确认资料包可以先解析 PDF 并生成待补信息，但必须保持 `dashboard_allowed=false`；正式确认后的工作台交接流程不变。
+- 改动文件：`scripts/process_remote_site_handoff.py`、`tests/test_remote_site_handoff.py`、`DEVELOPMENT_LOG.md`
+- 验证方法：运行远程交接和新店交接测试，确认未确认资料只携带 `--allow-unconfirmed` 做分析，不开放外部写入。
+
 ## 2026-08-07：远程新店候选自动分析任务
 
 - 新增 Site 远程取件任务，从工作台中转区读取负责人已确认的 Bot 资料包和原件。

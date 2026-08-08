@@ -1,4 +1,4 @@
-"""Consume confirmed Bot site packages and return Site candidates to Dashboard."""
+"""Consume Bot site packages and return preview or confirmed results to Dashboard."""
 
 from __future__ import annotations
 
@@ -104,7 +104,7 @@ def process_ready_package(
     item: dict[str, Any],
     *,
     output_root: Path,
-    analyzer: Callable[[Path, Path, Path], dict[str, Any]],
+    analyzer: Callable[[Path, Path, Path, bool], dict[str, Any]],
 ) -> dict[str, Any]:
     project_id = str(item.get("projectId") or "")
     if not project_id:
@@ -112,8 +112,9 @@ def process_ready_package(
     project_root = safe_child(output_root, project_id)
     storage_root = project_root / "storage"
     input_package = client.read_package(project_id)
-    if not input_package.get("confirmation", {}).get("input_summary_confirmed"):
-        raise ValueError("负责人尚未确认资料摘要")
+    confirmed = bool(input_package.get("confirmation", {}).get("input_summary_confirmed"))
+    if not confirmed and input_package.get("external_writes", {}).get("dashboard_allowed") is not False:
+        raise ValueError("未确认资料只能进行只读初审")
 
     project_root.mkdir(parents=True, exist_ok=True)
     package_path = project_root / "input-package.json"
@@ -132,16 +133,22 @@ def process_ready_package(
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(raw)
 
-    candidate = analyzer(package_path, storage_root, project_root / "analysis")
+    candidate = analyzer(package_path, storage_root, project_root / "analysis", not confirmed)
     client.submit_result(project_id, candidate)
     return {
         "project_id": project_id,
         "project_name": item.get("projectName"),
         "candidate_site_id": candidate.get("site_id", {}).get("value"),
+        "analysis_mode": "confirmed" if confirmed else "preview",
     }
 
 
-def run_analysis(package_path: Path, storage_root: Path, output_dir: Path) -> dict[str, Any]:
+def run_analysis(
+    package_path: Path,
+    storage_root: Path,
+    output_dir: Path,
+    allow_unconfirmed: bool,
+) -> dict[str, Any]:
     command = [
         sys.executable,
         "-m",
@@ -155,6 +162,8 @@ def run_analysis(package_path: Path, storage_root: Path, output_dir: Path) -> di
     ]
     if env_bool("SITE_HANDOFF_ENABLE_OCR", False):
         command.append("--enable-ocr")
+    if allow_unconfirmed:
+        command.append("--allow-unconfirmed")
     subprocess.run(command, cwd=REPO_ROOT, check=True)
     candidate_path = output_dir / package_path.parent.name / "site-record-candidate.json"
     if not candidate_path.exists():
@@ -166,7 +175,7 @@ def run_once(
     client: HandoffClient,
     *,
     output_root: Path = DEFAULT_OUTPUT_ROOT,
-    analyzer: Callable[[Path, Path, Path], dict[str, Any]] = run_analysis,
+    analyzer: Callable[[Path, Path, Path, bool], dict[str, Any]] = run_analysis,
 ) -> list[dict[str, Any]]:
     results = []
     failures = []
