@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import shutil
 import subprocess
@@ -15,7 +16,20 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def run_command(command: Sequence[str], *, cwd: Path) -> None:
-    subprocess.run(list(command), cwd=cwd, check=True)
+    result = subprocess.run(
+        list(command),
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.stdout:
+        print(result.stdout, end="")
+    if result.returncode:
+        detail = (result.stderr or result.stdout or "没有返回详细原因").strip()
+        raise RuntimeError(f"子步骤执行失败：{detail[-2000:]}")
+    if result.stderr:
+        print(result.stderr, end="", file=sys.stderr)
 
 
 def read_input_package(path: Path, *, allow_unconfirmed: bool) -> dict:
@@ -34,6 +48,15 @@ def read_input_package(path: Path, *, allow_unconfirmed: bool) -> dict:
     return package
 
 
+def build_read_only_analysis_package(package: dict) -> dict:
+    analysis_package = copy.deepcopy(package)
+    external_writes = dict(analysis_package.get("external_writes") or {})
+    external_writes["dashboard_allowed"] = False
+    external_writes["dashboard_attempted"] = False
+    analysis_package["external_writes"] = external_writes
+    return analysis_package
+
+
 def build_from_input_package(args: argparse.Namespace, output_dir: Path) -> Path:
     input_package = Path(args.input_package).resolve()
     storage_root = Path(args.storage_root).resolve()
@@ -45,6 +68,12 @@ def build_from_input_package(args: argparse.Namespace, output_dir: Path) -> Path
     project_dir = output_dir / project_id
     project_dir.mkdir(parents=True, exist_ok=True)
 
+    analysis_package_path = project_dir / "analysis-input-package.json"
+    analysis_package_path.write_text(
+        json.dumps(build_read_only_analysis_package(package), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
     internal_input = project_dir / "internal-input.json"
     review_json = project_dir / "evidence-review.json"
     review_markdown = project_dir / "evidence-review.md"
@@ -55,7 +84,7 @@ def build_from_input_package(args: argparse.Namespace, output_dir: Path) -> Path
         "-m",
         "scripts.parse_site_intake_pdfs",
         "--input",
-        str(input_package),
+        str(analysis_package_path),
         "--storage-root",
         str(storage_root),
         "--internal-output",
@@ -75,7 +104,7 @@ def build_from_input_package(args: argparse.Namespace, output_dir: Path) -> Path
             "-m",
             "scripts.parse_site_intake_supplements",
             "--input-package",
-            str(input_package),
+            str(analysis_package_path),
             "--storage-root",
             str(storage_root),
             "--internal-input",

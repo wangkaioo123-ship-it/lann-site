@@ -7,13 +7,45 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.run_new_store_handoff import read_input_package
+from scripts.run_new_store_handoff import (
+    build_read_only_analysis_package,
+    read_input_package,
+    run_command,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 class NewStoreHandoffTests(unittest.TestCase):
+    def test_confirmed_handoff_is_read_only_during_analysis(self) -> None:
+        package = {
+            "external_writes": {
+                "dashboard_allowed": True,
+                "dashboard_attempted": False,
+                "requested_scope": "formal_site_followup",
+            },
+        }
+        analysis_package = build_read_only_analysis_package(package)
+        self.assertTrue(package["external_writes"]["dashboard_allowed"])
+        self.assertFalse(analysis_package["external_writes"]["dashboard_allowed"])
+        self.assertFalse(analysis_package["external_writes"]["dashboard_attempted"])
+        self.assertEqual(
+            analysis_package["external_writes"]["requested_scope"],
+            "formal_site_followup",
+        )
+
+    def test_subprocess_failure_reports_real_reason(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "specific parser failure"):
+            run_command(
+                [
+                    sys.executable,
+                    "-c",
+                    "import sys; print('specific parser failure', file=sys.stderr); sys.exit(3)",
+                ],
+                cwd=REPO_ROOT,
+            )
+
     def test_unconfirmed_bot_package_is_rejected(self) -> None:
         package = {
             "schema_version": "lann-site-neutral-input/v0.1",
