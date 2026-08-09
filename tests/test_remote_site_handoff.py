@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from scripts.process_remote_site_handoff import process_ready_package, safe_child
+from scripts.process_remote_site_handoff import process_ready_package, run_analysis, safe_child
 
 
 class FakeClient:
@@ -50,6 +52,13 @@ class RemoteSiteHandoffTests(unittest.TestCase):
         package = {
             "schema_version": "lann-site-neutral-input/v0.1",
             "project": {"id": "site_20260807_remote", "name": "测试商场"},
+            "case_identity": {
+                "case_id": "site_20260807_remote",
+                "case_type": "site_opportunity",
+                "business_domain": "new_store_growth",
+                "business_stage": "待研判",
+            },
+            "business_context": {"stage": "待研判"},
             "confirmation": {"input_summary_confirmed": True},
             "sources": [{
                 "source_id": "source_001",
@@ -86,6 +95,8 @@ class RemoteSiteHandoffTests(unittest.TestCase):
             )
 
         self.assertEqual(result["candidate_site_id"], "site_20260807_remote")
+        self.assertEqual(result["case_id"], "site_20260807_remote")
+        self.assertEqual(result["business_stage"], "待研判")
         self.assertEqual(client.submitted, ("site_20260807_remote", candidate))
         self.assertEqual(
             [item["stage"] for item in client.progress],
@@ -173,6 +184,44 @@ class RemoteSiteHandoffTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             with self.assertRaisesRegex(ValueError, "越出"):
                 safe_child(Path(temp_dir), "../outside.pdf")
+
+    def test_rejects_mismatched_case_identity(self) -> None:
+        raw = b"fake pdf bytes"
+        package = {
+            "schema_version": "lann-site-neutral-input/v0.1",
+            "project": {"id": "site_20260807_expected", "name": "测试商场"},
+            "case_identity": {
+                "case_id": "site_20260807_other",
+                "case_type": "site_opportunity",
+                "business_domain": "new_store_growth",
+            },
+            "confirmation": {"input_summary_confirmed": True},
+            "sources": [],
+        }
+        client = FakeClient(package, raw)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with self.assertRaisesRegex(ValueError, "事项编号"):
+                process_ready_package(
+                    client,
+                    {"projectId": "site_20260807_expected", "projectName": "测试商场"},
+                    output_root=Path(temp_dir),
+                    analyzer=lambda *args: {},
+                )
+
+    @patch("scripts.process_remote_site_handoff.subprocess.run")
+    def test_surfaces_child_process_error(self, run_mock) -> None:
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=["python"],
+            returncode=1,
+            stdout="",
+            stderr="PDF 解析失败：文件结构损坏",
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            package_path = root / "input-package.json"
+            package_path.write_text("{}", encoding="utf-8")
+            with self.assertRaisesRegex(RuntimeError, "PDF 解析失败"):
+                run_analysis(package_path, root / "storage", root / "output", False)
 
 
 if __name__ == "__main__":

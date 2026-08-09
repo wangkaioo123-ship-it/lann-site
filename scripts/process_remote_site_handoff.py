@@ -137,6 +137,7 @@ def process_ready_package(
         project_root = safe_child(output_root, project_id)
         storage_root = project_root / "storage"
         input_package = client.read_package(project_id)
+        validate_case_identity(input_package, project_id)
         confirmed = bool(input_package.get("confirmation", {}).get("input_summary_confirmed"))
         if not confirmed and input_package.get("external_writes", {}).get("dashboard_allowed") is not False:
             raise ValueError("未确认资料只能进行只读初审")
@@ -168,7 +169,9 @@ def process_ready_package(
         client.submit_result(project_id, candidate)
         return {
             "project_id": project_id,
+            "case_id": input_package.get("case_identity", {}).get("case_id", project_id),
             "project_name": item.get("projectName"),
+            "business_stage": input_package.get("case_identity", {}).get("business_stage"),
             "candidate_site_id": candidate.get("site_id", {}).get("value"),
             "analysis_mode": "confirmed" if confirmed else "preview",
         }
@@ -198,11 +201,36 @@ def run_analysis(
         command.append("--enable-ocr")
     if allow_unconfirmed:
         command.append("--allow-unconfirmed")
-    subprocess.run(command, cwd=REPO_ROOT, check=True)
+    result = subprocess.run(
+        command,
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode:
+        detail = (result.stderr or result.stdout or "没有返回详细原因").strip()
+        raise RuntimeError(f"Site 分析子步骤失败：{detail[-2000:]}")
     candidate_path = output_dir / package_path.parent.name / "site-record-candidate.json"
     if not candidate_path.exists():
         raise FileNotFoundError(f"Site 分析未生成候选结果: {candidate_path}")
     return json.loads(candidate_path.read_text(encoding="utf-8"))
+
+
+def validate_case_identity(input_package: dict[str, Any], project_id: str) -> None:
+    identity = input_package.get("case_identity") or {}
+    if not identity:
+        return
+    if str(identity.get("case_id") or "") != project_id:
+        raise ValueError("资料包事项编号与待处理项目不一致")
+    if identity.get("case_type") not in (None, "site_opportunity"):
+        raise ValueError("资料包事项类型不是新店场地机会")
+    if identity.get("business_domain") not in (None, "new_store_growth"):
+        raise ValueError("资料包业务域不是新店增长")
+    business_stage = identity.get("business_stage")
+    context_stage = (input_package.get("business_context") or {}).get("stage")
+    if business_stage and context_stage and business_stage != context_stage:
+        raise ValueError("资料包业务阶段前后不一致")
 
 
 def run_once(
