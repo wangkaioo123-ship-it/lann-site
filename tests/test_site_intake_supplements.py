@@ -233,6 +233,7 @@ class SiteIntakeSupplementTests(unittest.TestCase):
                 raw,
             )
             packet = neutral_packet([source])
+            packet["external_writes"]["requested_scope"] = "none"
             _, review = apply_supplements(
                 packet,
                 root,

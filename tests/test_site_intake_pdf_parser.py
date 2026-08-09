@@ -161,6 +161,7 @@ class SiteIntakePdfParserTests(unittest.TestCase):
                 writer.write(file)
             raw = pdf_path.read_bytes()
             packet = neutral_packet(hashlib.sha256(raw).hexdigest(), len(raw))
+            packet["external_writes"]["requested_scope"] = "none"
 
             internal, review = parse_neutral_pdf_package(packet, root)
 

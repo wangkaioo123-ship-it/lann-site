@@ -672,11 +672,6 @@ def parse_neutral_pdf_package(
     ocr_cache: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     validate_neutral_packet(packet)
-    if packet["external_writes"] != {
-        "dashboard_allowed": False,
-        "dashboard_attempted": False,
-    }:
-        raise ValueError("真实资料解析只允许在禁止dashboard外写的中性包上运行")
 
     internal = convert_neutral_packet(packet)
     inventory: list[dict[str, Any]] = []

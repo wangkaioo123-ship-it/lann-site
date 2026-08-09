@@ -394,11 +394,6 @@ def apply_supplements(
     only_source_ids: set[str] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     validate_neutral_packet(packet)
-    if packet["external_writes"] != {
-        "dashboard_allowed": False,
-        "dashboard_attempted": False,
-    }:
-        raise ValueError("补充资料解析只允许在禁止dashboard外写的中性包上运行")
 
     source_ids = {row["source_id"] for row in internal["sources"]}
     image_reviews_by_id = {

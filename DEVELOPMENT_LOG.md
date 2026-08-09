@@ -401,3 +401,9 @@
 - 验收结果：湖滨与已有“湖滨in77”匹配分 1.0、建议关联；宝山与泗泾仅同城、匹配分 0.25、不建议关联；本地候选共 3 条，分别为可推荐、招商接洽、待研判。
 - 发现并隔离的问题：真实 Bot 泗泾资料包中混入两条宝山文字说明。Site 正确将其暴露为待核验，但该包不再用于正式导入；项目归属修复在 `lann-work-bot` 单独完成。
 - 验证方法：`python -m unittest tests.test_new_store_handoff tests.test_site_record_candidate_builder tests.test_site_shadow_analysis` 共 18 项通过；Dashboard `node scripts/verify_site_intake.js` 通过；三候选重复导入均返回 `updated`。
+
+# 2026-08-09 只读初审资料包兼容修复
+
+- 类型：跨项目交接修复
+- 内容：移除 PDF 正文与补充资料解析器重复维护的 `external_writes` 整对象相等判断，统一复用中性输入校验。系统仍严格要求 `dashboard_allowed=false`、`dashboard_attempted=false`，但允许 Bot 携带 `requested_scope` 等不改变写入权限的说明字段，避免所有只读初审任务被错误拒绝。
+- 验证方法：运行 PDF 解析专项测试、远程交接测试，并使用“上海太古源”真实输入包和 PDF 完整复现初审流程。
