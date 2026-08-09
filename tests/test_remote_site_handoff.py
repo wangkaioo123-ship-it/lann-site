@@ -13,6 +13,7 @@ class FakeClient:
         self.package = package
         self.source = source
         self.submitted = None
+        self.progress = []
 
     def read_package(self, project_id: str) -> dict:
         return self.package
@@ -22,6 +23,24 @@ class FakeClient:
 
     def submit_result(self, project_id: str, candidate: dict) -> dict:
         self.submitted = (project_id, candidate)
+        return {"success": True}
+
+    def submit_progress(
+        self,
+        project_id: str,
+        *,
+        status: str,
+        stage: str,
+        message: str,
+        error: str | None = None,
+    ) -> dict:
+        self.progress.append({
+            "project_id": project_id,
+            "status": status,
+            "stage": stage,
+            "message": message,
+            "error": error,
+        })
         return {"success": True}
 
 
@@ -68,6 +87,10 @@ class RemoteSiteHandoffTests(unittest.TestCase):
 
         self.assertEqual(result["candidate_site_id"], "site_20260807_remote")
         self.assertEqual(client.submitted, ("site_20260807_remote", candidate))
+        self.assertEqual(
+            [item["stage"] for item in client.progress],
+            ["reading_package", "downloading_sources", "analyzing", "returning_result"],
+        )
 
     def test_unconfirmed_package_runs_read_only_preview(self) -> None:
         raw = b"preview pdf bytes"
@@ -110,6 +133,41 @@ class RemoteSiteHandoffTests(unittest.TestCase):
 
         self.assertEqual(result["analysis_mode"], "preview")
         self.assertEqual(client.submitted, ("site_20260807_preview", candidate))
+
+    def test_reports_failure_stage_without_losing_original_error(self) -> None:
+        raw = b"broken preview"
+        package = {
+            "schema_version": "lann-site-neutral-input/v0.1",
+            "project": {"id": "site_20260807_failure", "name": "失败商场"},
+            "confirmation": {"input_summary_confirmed": False},
+            "external_writes": {"dashboard_allowed": False},
+            "sources": [{
+                "source_id": "source_failure",
+                "storage": {
+                    "relative_path": "blobs/failure.pdf",
+                    "sha256": hashlib.sha256(raw).hexdigest(),
+                    "bytes": len(raw),
+                },
+            }],
+        }
+        client = FakeClient(package, raw)
+
+        def analyzer(*args, **kwargs) -> dict:
+            raise RuntimeError("PDF 正文读取失败")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with self.assertRaisesRegex(RuntimeError, "PDF 正文读取失败"):
+                process_ready_package(
+                    client,
+                    {"projectId": "site_20260807_failure", "projectName": "失败商场"},
+                    output_root=Path(temp_dir),
+                    analyzer=analyzer,
+                )
+
+        failure = client.progress[-1]
+        self.assertEqual(failure["status"], "failed")
+        self.assertEqual(failure["stage"], "analyzing")
+        self.assertEqual(failure["error"], "PDF 正文读取失败")
 
     def test_rejects_path_escape(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
