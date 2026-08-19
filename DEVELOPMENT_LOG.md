@@ -15,6 +15,14 @@
 
 ---
 
+## 2026-08-18 加盟经营异常月度核查与人员证据增强 V0.1
+
+- 类型：功能 / 数据契约 / 测试
+- 内容：恢复既有加盟经营异常候选 V0.1，并新增可按完整自然月重复运行的只读评审命令。正式读取服务器 canonical 人员月表，增加经营与人员联合 Gate、固定 9 家历史回放、事实/代理指标/假设/缺口分层、确定性 run ID、输入摘要和幂等产物目录。人员生产契约严格校验有序 25 列、`data_version` 和生产 commit，每次实际文件 SHA-256 只作运行身份与审计，不写死为未来刷新白名单。人员证据只解释现有候选，不改变候选阈值、名单或排序；不写 Dashboard。
+- 改动文件：`services/franchise_operating_check.py`、`services/workforce_monthly.py`、`services/franchise_operating_review.py`、`scripts/build_franchise_operating_review.py`、`scripts/build_site_performance.py`、`ai/evals/fixed_2026_07_franchise_candidates.json`、相关测试、README 与说明文档。
+- commit：见本次聚焦提交。
+- 验证方法：专项测试、全量 unittest、compileall、固定 9 家候选顺序核对、幂等重复运行与 `git diff --check`。
+
 ## 2026-08-08：选址资料只读初审
 
 - 类型：功能 / 安全边界
