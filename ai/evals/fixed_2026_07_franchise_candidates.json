@@ -1,0 +1,17 @@
+{
+  "schema_version": "franchise-operating-candidate-freeze/v0.1",
+  "target_month": "2026-07",
+  "selection_rule_version": "franchise-operating-check/v0.1",
+  "note": "2026-07 首次业务核查的固定9家及既有顺序；人员证据不得改变名单和排序。",
+  "candidate_order": [
+    {"store_id": "L0015", "store_name": "上海长风大悦城店", "candidate_id": "operating-check:L0015:2026-07:rent-pressure-with-revenue-decline"},
+    {"store_id": "L0018", "store_name": "上海丁香国际店", "candidate_id": "operating-check:L0018:2026-07:operating-combination-decline"},
+    {"store_id": "L0025", "store_name": "杭州奥体印象城店", "candidate_id": "operating-check:L0025:2026-07:rent-pressure-with-revenue-decline"},
+    {"store_id": "L0028", "store_name": "上海宝山日月光店", "candidate_id": "operating-check:L0028:2026-07:operating-combination-decline"},
+    {"store_id": "L0033", "store_name": "武汉万象城店", "candidate_id": "operating-check:L0033:2026-07:rent-pressure-with-revenue-decline"},
+    {"store_id": "L0045", "store_name": "上海静安晶品店", "candidate_id": "operating-check:L0045:2026-07:operating-combination-decline"},
+    {"store_id": "L0056", "store_name": "苏州狮山龙湖天街店", "candidate_id": "operating-check:L0056:2026-07:rent-pressure-with-revenue-decline"},
+    {"store_id": "L0061", "store_name": "上海湖滨道店", "candidate_id": "operating-check:L0061:2026-07:operating-combination-decline"},
+    {"store_id": "L0070", "store_name": "上海高岛屋百货店", "candidate_id": "operating-check:L0070:2026-07:operating-combination-decline"}
+  ]
+}

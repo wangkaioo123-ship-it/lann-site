@@ -62,6 +62,17 @@ OCR 合同脚本需要额外安装：
 
 `pipeline_manifest.json` 记录本轮输入输出的行数、时间范围和文件指纹，用于判断结果是否来自同一批数据。
 
+## 加盟经营异常月度核查
+
+完整自然月经营数据和脱敏人员月表就绪后，生成只读核查候选与人员证据增强包：
+
+```powershell
+.\.venv\Scripts\python.exe -m scripts.build_franchise_operating_review `
+  --workforce-contract .\config\store_workforce_monthly.v1.contract.json
+```
+
+生产默认只读人员出口：`/opt/management-dashboard/data/canonical-snapshot/store_workforce_monthly.csv`，正式契约为 `config/store_workforce_monthly.v1.contract.json`。Site 精确校验 25 列顺序、`data_version` 和生产 commit，并把每次实际文件 SHA-256 写入运行记录；SHA 变化本身不阻断正常月度刷新。Gate 未通过时不生成候选；同一月份、同一输入重复运行不会制造重复候选；不写 Dashboard。首次固定 9 家 2026-07 回放、产物结构和失败提示见 `docs/FRANCHISE_OPERATING_REVIEW_V0.1.md`。
+
 只读检查 Hanson BI 数据新鲜度与对账：
 
 ```powershell

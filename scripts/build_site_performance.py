@@ -4,6 +4,8 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
+from services.franchise_operating_check import build_operating_check_candidates
+
 
 BASE = Path("data/staging/base_table.csv")
 OPS = Path("data/staging/site_ops_monthly.csv")
@@ -167,6 +169,10 @@ def build(
         writer.writerow(monthly_headers)
         writer.writerows(monthly)
 
+    operating_check = build_operating_check_candidates(
+        [dict(zip(monthly_headers, row)) for row in monthly]
+    )
+
     all_months = sorted({row["月份"] for row in ops_rows if row.get("月份")})
     recent_months = set(all_months[-12:])
     by_site = defaultdict(list)
@@ -201,6 +207,16 @@ def build(
         "营收来源说明",
         "平均留存率",
         "平均返店频次",
+        "经营核查数据状态",
+        "经营核查数据检查",
+        "经营核查候选",
+        "经营核查候选ID",
+        "经营核查为什么现在提出",
+        "经营核查异常持续月数",
+        "经营核查关键证据",
+        "经营核查可能解释",
+        "经营核查证据缺口",
+        "经营核查建议核查",
     ]
 
     summary = []
@@ -223,6 +239,8 @@ def build(
         avg_therapist_prod_values = [num(r[18]) for r in eligible_rows if num(r[18]) > 0]
         retention_values = [num(r[25]) for r in eligible_rows if r[25] not in ("", None)]
         return_frequency_values = [num(r[26]) for r in eligible_rows if r[26] not in ("", None)]
+        operating_result = operating_check["stores"].get(site_id, {})
+        operating_candidate = operating_result.get("candidate") or {}
 
         if first[9] == "当年已定" and nonzero_revenues:
             usability = "可用于租售比分析"
@@ -263,6 +281,16 @@ def build(
                 "；".join(sorted({r[22] for r in eligible_rows if r[22]})),
                 fmt(sum(retention_values) / len(retention_values) if retention_values else ""),
                 fmt(sum(return_frequency_values) / len(return_frequency_values) if return_frequency_values else ""),
+                operating_result.get("status", "不在加盟经营核查范围"),
+                operating_check["global"]["message"],
+                "是" if operating_candidate else "否",
+                operating_candidate.get("candidate_id", ""),
+                operating_candidate.get("why_now", ""),
+                operating_candidate.get("duration_months", ""),
+                operating_candidate.get("evidence", ""),
+                operating_candidate.get("hypotheses", ""),
+                operating_candidate.get("gaps", ""),
+                operating_candidate.get("questions", ""),
             ]
         )
 
