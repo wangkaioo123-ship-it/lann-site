@@ -83,6 +83,11 @@ class FranchiseOperatingReviewTests(unittest.TestCase):
         self.assertEqual(dataset["column_count"], 25)
         self.assertTrue(gate["ready"])
         self.assertEqual(gate["confidence_levels"], ["中"])
+        self.assertEqual(gate["source_store_count"], 1)
+        self.assertEqual(gate["source_months"], [
+            "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07",
+        ])
+        self.assertEqual(gate["missing_scope_stores"], [])
 
     def test_production_unavailable_sample_keeps_blank_headcount_and_blocks_strong_use(self):
         values = [

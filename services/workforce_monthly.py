@@ -274,9 +274,13 @@ def build_workforce_gate(dataset: dict, target_month: str, scope_store_ids, cand
     rows = [row for row in dataset.get("rows", []) if row.get("month") == target_month]
     valid_rows = [row for row in rows if CANONICAL_STORE_ID.fullmatch(row.get("store_id", ""))]
     by_store = {row["store_id"]: row for row in valid_rows}
+    dataset_rows = dataset.get("rows", [])
+    dataset_store_ids = sorted({row.get("store_id") for row in dataset_rows if row.get("store_id")})
+    dataset_months = sorted({row.get("month") for row in dataset_rows if row.get("month")})
     scope_store_ids = sorted(set(scope_store_ids))
     candidate_store_ids = list(dict.fromkeys(candidate_store_ids))
     scope_covered = [store_id for store_id in scope_store_ids if store_id in by_store]
+    scope_missing = [store_id for store_id in scope_store_ids if store_id not in by_store]
     candidate_missing = [store_id for store_id in candidate_store_ids if store_id not in by_store]
     scope_coverage = len(scope_covered) / len(scope_store_ids) if scope_store_ids else 1.0
     required_values = list(NUMERIC_FIELDS) + [
@@ -317,8 +321,12 @@ def build_workforce_gate(dataset: dict, target_month: str, scope_store_ids, cand
         "ready": not issues,
         "target_month": target_month,
         "data_cutoff_dates": cutoff_dates,
+        "source_row_count": dataset.get("row_count", len(dataset_rows)),
+        "source_store_count": len(dataset_store_ids),
+        "source_months": dataset_months,
         "scope_store_count": len(scope_store_ids),
         "covered_scope_store_count": len(scope_covered),
+        "missing_scope_stores": scope_missing,
         "scope_coverage": scope_coverage,
         "mapping_completeness": mapping_completeness,
         "field_completeness": field_completeness,

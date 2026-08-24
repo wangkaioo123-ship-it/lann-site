@@ -2,6 +2,14 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-08-24 加盟经营异常核查接入 Site 自动任务
+
+- 类型：生产自动化 / 数据边界
+- 内容：在不新增服务器、服务或消息队列的前提下，将加盟经营异常月度核查接入现有 `lann-site-refresh.timer` 对应的只读批处理末尾。正常运行读取正式出口覆盖的全部门店，固定 9 家仅保留为历史校准样本；人员 Gate 新增源数据行数、门店数、月份及目标范围缺失门店，便于直接判断 lann-data 出口是否满足 Site 使用。Hanson/lann-data 只负责聚合出口，Site 自主运行分析，结果仍保持 `dashboard_write_allowed=false`。
+- 改动文件：`scripts/run_server_batch.py`、`services/workforce_monthly.py`、`tests/test_server_batch.py`、`tests/test_franchise_operating_review.py`、`docs/FRANCHISE_OPERATING_REVIEW_V0.1.md`、`docs/server_batch.md`、`DEVELOPMENT_LOG.md`
+- commit：本提交
+- 验证方法：运行加盟经营核查专项测试、服务器批处理顺序测试、全量单元测试和 Python 编译检查；生产部署后由既有 timer 自动生成全门店只读评审包。
+
 格式：
 
 ```

@@ -16,6 +16,13 @@ COMMANDS = [
     [sys.executable, "-m", "scripts.export_ops_from_bi"],
     [sys.executable, "-m", "scripts.refresh_hanson_daily_ops"],
     [sys.executable, "-m", "scripts.rebuild_analysis"],
+    [
+        sys.executable,
+        "-m",
+        "scripts.build_franchise_operating_review",
+        "--workforce-contract",
+        "config/store_workforce_monthly.v1.contract.json",
+    ],
 ]
 
 
