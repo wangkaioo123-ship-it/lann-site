@@ -2,6 +2,14 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-08-25 加盟经营异常完整月自动补跑
+
+- 类型：生产自动化 / 失败恢复 / 测试
+- 内容：在既有Site服务器批处理内增加从2026-06开始的无状态月度补跑。每次自动选择最早一个没有成功只读manifest的完整自然月；Gate失败不生成候选且保持待补，输入更新后自动重试；成功后下一次推进下个月，追平后恢复最新完整月常规幂等运行。2026-06低可信人员聚合只允许作为辅助限制，不能形成较强人员交叉证据。未新增服务、数据库、队列、手动review入口或Dashboard写入。
+- 改动文件：`scripts/build_franchise_operating_review.py`、`scripts/run_server_batch.py`、`services/workforce_monthly.py`、`services/franchise_operating_review.py`、`tests/test_franchise_operating_backfill.py`、`tests/test_franchise_operating_review.py`、`tests/test_server_batch.py`、`README.md`、`docs/FRANCHISE_OPERATING_REVIEW_V0.1.md`、`docs/server_batch.md`、`DEVELOPMENT_LOG.md`
+- commit：见本次聚焦提交。
+- 验证方法：专项补跑/人员证据/服务器批处理测试、全量unittest、Python compileall和git diff-check。
+
 ## 2026-08-24 加盟经营异常核查接入 Site 自动任务
 
 - 类型：生产自动化 / 数据边界

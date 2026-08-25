@@ -31,7 +31,7 @@ Site 不按相似列名猜测。运行时通过 `--workforce-contract` 读取精
 - 人员门店编号全部为 canonical `Lxxxx`，门店月不重复。
 - 加盟/合资范围人员覆盖率不低于 80%，本轮候选人员覆盖率为 100%。
 - 候选人员字段完整度和映射完整度均为 100%。
-- 候选人员数据可信等级为中或高；低/未知会阻断。
+- 候选人员数据通常要求中或高可信；2026-06已确认只能低可信使用，字段和覆盖通过时允许作为辅助限制进入报告，但不得形成较强人员结论。其他月份的低可信和所有未知可信仍会阻断。
 - `snapshot_coverage_status=unavailable/missing/failed` 会阻断；`partial/incomplete` 可保留为有限证据，但不能单独支持快照型较强结论。
 
 当月未闭月数据只写入 `trend_only_months`，不参与候选。任一关键 Gate 失败时，运行状态为 `blocked_by_data_gate`，`review.json` 的候选数组为空，并在 `data_gate.json` 与 `review.md` 给出原因。
@@ -50,6 +50,17 @@ Site 不按相似列名猜测。运行时通过 `--workforce-contract` 读取精
 证据归类规则固定为：近 2 月月均人数较此前 3 月下降至少 8%、目标月末较上月末减少至少 1 人，或最近单月离职+调出至少 2 人（最近两月合计至少 3 人）时，视为存在人员变化信号。鉴于 2026-01—06 只能作辅助，只有“目标月事件覆盖完整且离职+调出至少 2 人”，或“目标月与上月均有中/高可信完整快照且月末减少至少 1 人”，并同时与营收及至少一项客次/工作人天/生产率同向下降，才归为“人员侧较强交叉证据”。仅由早期估算月份形成的趋势最多归为“有辅助证据”。这些条件只整理证据，不参与候选生成。
 
 ## 运行
+
+生产自动补跑（`lann-site-refresh.timer`调用的服务器批处理使用此模式）：
+
+```bash
+cd /srv/apps/lann-site/repo
+.venv/bin/python -m scripts.build_franchise_operating_review \
+  --auto-backfill-from 2026-06 \
+  --workforce-contract /srv/apps/lann-site/repo/config/store_workforce_monthly.v1.contract.json
+```
+
+调度从2026-06扫描到当前最新完整自然月。每次只处理最早一个没有`ready_for_business_review`成功manifest的月份：首次运行选择2026-06；成功后下一次选择下一个缺失月；Gate失败的月份不算成功，继续留在队首，输入数据刷新后自动产生新的稳定run并重试。全部月份追平后，同一命令恢复最新完整月的常规幂等运行。自动模式读取全门店范围，不接受`--candidate-freeze`。
 
 每月正常运行：
 
@@ -83,6 +94,7 @@ cd /srv/apps/lann-site/repo
 
 ```text
 franchise_operating_reviews/
+├── auto_backfill_status.json
 ├── last_attempt.json
 ├── latest_success.json
 └── YYYY-MM/<run_id>/
@@ -97,14 +109,16 @@ franchise_operating_reviews/
 
 `manifest.json` 记录输入路径、摘要、行数、25 列映射、规则版本、候选顺序、生成时间和写入边界，可用于复盘与回滚核对。
 
+`auto_backfill_status.json`记录扫描起点、最新完整月、成功月份、待补月份、本次选择月份、run状态与路径。它是Site本地运行状态，不是Dashboard业务事项。
+
 ## 常见失败提示
 
 - `目标月份尚未闭月`：本月只能看趋势。
 - `人员聚合 schema 应为 25 列`：发布契约发生变化，停止读取。
 - `缺少经数据发布方确认的人员生产契约`：检查已发布的 `config/store_workforce_monthly.v1.contract.json` 是否存在，不按名称相似度或列位置猜测。
 - `人员数据缺少候选门店`：补齐 canonical 门店月后重跑。
-- `候选门店人员可信等级不足`：只保留 Gate 失败记录，不生成候选。
+- `候选门店人员可信等级不足`：除已确认只作辅助的2026-06低可信外，只保留 Gate 失败记录，不生成候选。
 
-生产部署后由 Site 现有 `lann-site-refresh.timer` 在经营月表刷新成功后自动调用本命令。调度每日检查一次 Gate，但同一完整月、同一输入只会形成一个 run；这不是实时预警。Hanson/lann-data 只负责持续发布只读聚合出口，不代替 Site 执行分析。
+生产部署后由 Site 现有 `lann-site-refresh.timer` 在经营月表刷新成功后自动调用补跑模式。调度每日最多推进一个缺失成功月；Gate失败会让服务器批处理明确失败并在下一次自动重试。同一月份、同一输入只会形成一个run；这不是实时预警。Hanson/lann-data只负责持续发布只读聚合出口，不代替Site执行分析。
 
 正常生产运行读取正式出口覆盖的全部门店。固定 9 家文件只用于 2026-07 历史校准，不限制数据读取范围。`data_gate.json` 会记录人员出口的总行数、门店数、月份、目标范围覆盖数和缺失门店，先用于确认数据通道是否满足分析需要。

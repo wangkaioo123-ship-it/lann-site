@@ -44,6 +44,7 @@ CONFIDENCE_MAP = {
     "medium": "中", "medium_confidence": "中", "middle": "中", "中": "中", "中可信": "中",
     "low": "低", "low_confidence": "低", "低": "低", "低可信": "低",
 }
+LOW_TRUST_AUXILIARY_MONTHS = {"2026-06"}
 
 
 class WorkforceContractError(ValueError):
@@ -302,6 +303,7 @@ def build_workforce_gate(dataset: dict, target_month: str, scope_store_ids, cand
         row["store_id"] for row in candidate_rows if normalize_header(row.get("coverage_status")) in BAD_COVERAGE
     ]
     issues = list(dataset.get("issues", []))
+    limitations = []
     if not rows:
         issues.append(f"人员聚合没有目标完整月 {target_month}")
     if scope_coverage < 0.8:
@@ -312,7 +314,13 @@ def build_workforce_gate(dataset: dict, target_month: str, scope_store_ids, cand
         issues.append(f"人员门店映射完整度不足（{mapping_completeness * 100:.1f}%）")
     if field_completeness < 1.0:
         issues.append(f"候选门店人员字段完整度不足（{field_completeness * 100:.1f}%）")
-    if any(level not in {"中", "高"} for level in confidence_levels):
+    low_confidence = any(level not in {"中", "高"} for level in confidence_levels)
+    low_only = bool(confidence_levels) and all(level == "低" for level in confidence_levels)
+    if low_confidence and low_only and target_month in LOW_TRUST_AUXILIARY_MONTHS:
+        limitations.append(
+            f"{target_month} 人员数据可信等级为{','.join(confidence_levels) or '未知'}，只作辅助证据，不支持较强人员结论"
+        )
+    elif low_confidence:
         issues.append(f"候选门店人员可信等级不足：{', '.join(confidence_levels) or '未知'}")
     if bad_snapshot_coverage_stores:
         issues.append(f"候选门店人数快照覆盖不足：{', '.join(bad_snapshot_coverage_stores)}")
@@ -334,9 +342,11 @@ def build_workforce_gate(dataset: dict, target_month: str, scope_store_ids, cand
         "candidate_store_count": len(candidate_store_ids),
         "missing_candidate_stores": candidate_missing,
         "trend_only_months": sorted({row.get("month") for row in dataset.get("rows", []) if row.get("month", "") > target_month}),
+        "limitations": limitations,
         "issues": list(dict.fromkeys(issues)),
-        "message": "；".join(dict.fromkeys(issues)) if issues else (
+        "message": "；".join(dict.fromkeys(issues)) if issues else "；".join([
             f"人员数据截止 {max(cutoff_dates) if cutoff_dates else '待确认'}；候选覆盖 100.0%；"
-            f"字段完整度 {field_completeness * 100:.1f}%；可信等级 {','.join(confidence_levels)}"
-        ),
+            f"字段完整度 {field_completeness * 100:.1f}%；可信等级 {','.join(confidence_levels)}",
+            *limitations,
+        ]),
     }

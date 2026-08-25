@@ -22,6 +22,8 @@ COMMANDS = [
         "scripts.build_franchise_operating_review",
         "--workforce-contract",
         "config/store_workforce_monthly.v1.contract.json",
+        "--auto-backfill-from",
+        "2026-06",
     ],
 ]
 

@@ -115,14 +115,19 @@ def build_store_review(store_id, store_name, candidate, operating_rows, workforc
         or (end_headcount_delta is not None and end_headcount_delta <= -1)
         or concentrated_outflow
     )
-    target_month_direct_signal = (
-        target_month_outflow >= 2 and _event_coverage_complete(latest)
-    ) or (
-        end_headcount_delta is not None
-        and end_headcount_delta <= -1
-        and (previous.get("month") or "") >= "2026-07"
-        and _snapshot_reliable(previous)
-        and _snapshot_reliable(latest)
+    target_month_strong_eligible = (
+        (latest.get("month") or "") >= "2026-07"
+        and latest.get("confidence_level") in {"中", "高"}
+    )
+    target_month_direct_signal = target_month_strong_eligible and (
+        (target_month_outflow >= 2 and _event_coverage_complete(latest))
+        or (
+            end_headcount_delta is not None
+            and end_headcount_delta <= -1
+            and (previous.get("month") or "") >= "2026-07"
+            and _snapshot_reliable(previous)
+            and _snapshot_reliable(latest)
+        )
     )
     any_personnel_change = personnel_signal or any(
         value > 0

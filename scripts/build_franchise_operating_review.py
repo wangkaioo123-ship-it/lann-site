@@ -13,6 +13,7 @@ from services.franchise_operating_check import (
     RULE_VERSION as CANDIDATE_RULE_VERSION,
     build_operating_check_candidates,
     is_scope_row,
+    month_index,
 )
 from services.franchise_operating_review import REVIEW_SCHEMA_VERSION, build_review, render_markdown
 from services.workforce_monthly import (
@@ -29,6 +30,8 @@ WORKFORCE_MONTHLY = Path("/opt/management-dashboard/data/canonical-snapshot/stor
 WORKFORCE_CONTRACT = Path("config/store_workforce_monthly.v1.contract.json")
 OUTPUT_ROOT = Path("data/staging/franchise_operating_reviews")
 RULE_VERSION = "franchise-operating-monthly/v0.1"
+AUTO_BACKFILL_SCHEMA_VERSION = "franchise-operating-auto-backfill/v0.1"
+AUTO_BACKFILL_START_MONTH = "2026-06"
 
 
 def read_csv(path: Path) -> list[dict]:
@@ -88,6 +91,64 @@ def stable_run_id(payload: dict) -> str:
 
 def write_json(path: Path, payload: dict):
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def month_from_index(value: int) -> str:
+    year, month_zero_based = divmod(value - 1, 12)
+    return f"{year:04d}-{month_zero_based + 1:02d}"
+
+
+def latest_complete_month(today: date) -> str:
+    return month_from_index(today.year * 12 + today.month - 1)
+
+
+def calendar_months(start_month: str, end_month: str) -> list[str]:
+    start_index = month_index(start_month)
+    end_index = month_index(end_month)
+    if start_index is None:
+        raise ValueError(f"自动补跑起始月份非法：{start_month}")
+    if end_index is None or start_index > end_index:
+        return []
+    return [month_from_index(value) for value in range(start_index, end_index + 1)]
+
+
+def successful_review_months(output_root: str | Path) -> set[str]:
+    output_root = Path(output_root)
+    successful = set()
+    if not output_root.is_dir():
+        return successful
+    for manifest_path in output_root.glob("????-??/*/manifest.json"):
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        run_month = str(payload.get("run_month") or "")
+        if (
+            payload.get("schema_version") == "franchise-operating-run/v0.1"
+            and payload.get("status") == "ready_for_business_review"
+            and payload.get("dashboard_write_allowed") is False
+            and month_index(run_month) is not None
+        ):
+            successful.add(run_month)
+    return successful
+
+
+def plan_auto_backfill(output_root: str | Path, start_month=AUTO_BACKFILL_START_MONTH, today=None) -> dict:
+    today = today or date.today()
+    complete_months = calendar_months(start_month, latest_complete_month(today))
+    successful_months = successful_review_months(output_root)
+    pending_months = [month for month in complete_months if month not in successful_months]
+    return {
+        "schema_version": AUTO_BACKFILL_SCHEMA_VERSION,
+        "start_month": start_month,
+        "latest_complete_month": complete_months[-1] if complete_months else None,
+        "complete_months": complete_months,
+        "successful_months": [month for month in complete_months if month in successful_months],
+        "pending_months": pending_months,
+        "selected_month": pending_months[0] if pending_months else None,
+        "mode": "backfill" if pending_months else "regular_latest",
+        "dashboard_write_allowed": False,
+    }
 
 
 def write_candidate_csv(path: Path, candidates: list[dict]):
@@ -247,26 +308,78 @@ def build(
     return manifest, run_dir, False
 
 
+def run_auto_backfill(
+    operating_path=OPERATING_MONTHLY,
+    workforce_path=WORKFORCE_MONTHLY,
+    output_root=OUTPUT_ROOT,
+    start_month=AUTO_BACKFILL_START_MONTH,
+    workforce_contract=WORKFORCE_CONTRACT,
+    today=None,
+    now=None,
+):
+    today = today or date.today()
+    now = now or datetime.now(timezone.utc)
+    output_root = Path(output_root)
+    plan = plan_auto_backfill(output_root, start_month=start_month, today=today)
+    manifest, run_dir, duplicate = build(
+        operating_path=operating_path,
+        workforce_path=workforce_path,
+        output_root=output_root,
+        target_month=plan["selected_month"],
+        workforce_contract=workforce_contract,
+        today=today,
+        now=now,
+    )
+    status = {
+        **plan,
+        "attempted_month": manifest.get("run_month"),
+        "run_id": manifest.get("run_id"),
+        "run_status": manifest.get("status"),
+        "run_path": str(run_dir),
+        "duplicate_input": duplicate,
+        "updated_at": now.isoformat(),
+    }
+    output_root.mkdir(parents=True, exist_ok=True)
+    write_json(output_root / "auto_backfill_status.json", status)
+    return manifest, run_dir, duplicate, status
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--operating-monthly", default=str(OPERATING_MONTHLY))
     parser.add_argument("--workforce-monthly", default=str(WORKFORCE_MONTHLY))
     parser.add_argument("--output-root", default=str(OUTPUT_ROOT))
-    parser.add_argument("--month", help="历史回放月份 YYYY-MM；省略时只运行最新完整自然月")
+    target = parser.add_mutually_exclusive_group()
+    target.add_argument("--month", help="历史回放月份 YYYY-MM；省略时只运行最新完整自然月")
+    target.add_argument(
+        "--auto-backfill-from",
+        help="从指定月份起，每次优先运行最早一个尚无成功报告的完整自然月",
+    )
     parser.add_argument("--candidate-freeze", help="固定候选与顺序文件，仅用于已确认的历史回放")
     parser.add_argument(
         "--workforce-contract", default=str(WORKFORCE_CONTRACT),
         help="JSON：精确25列表头、data_version、source commit及语义映射",
     )
     args = parser.parse_args()
-    manifest, _, _ = build(
-        args.operating_monthly,
-        args.workforce_monthly,
-        args.output_root,
-        args.month,
-        args.candidate_freeze,
-        args.workforce_contract,
-    )
+    if args.auto_backfill_from and args.candidate_freeze:
+        parser.error("自动补跑使用全门店影子扫描，不接受固定候选文件")
+    if args.auto_backfill_from:
+        manifest, _, _, _ = run_auto_backfill(
+            operating_path=args.operating_monthly,
+            workforce_path=args.workforce_monthly,
+            output_root=args.output_root,
+            start_month=args.auto_backfill_from,
+            workforce_contract=args.workforce_contract,
+        )
+    else:
+        manifest, _, _ = build(
+            args.operating_monthly,
+            args.workforce_monthly,
+            args.output_root,
+            args.month,
+            args.candidate_freeze,
+            args.workforce_contract,
+        )
     if manifest["status"] != "ready_for_business_review":
         raise SystemExit(2)
 

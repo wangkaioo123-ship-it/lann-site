@@ -10,9 +10,11 @@ class ServerBatchTests(unittest.TestCase):
             "scripts.rebuild_analysis",
             "scripts.build_franchise_operating_review",
         ])
-        self.assertEqual(COMMANDS[-1][-2:], [
+        self.assertEqual(COMMANDS[-1][-4:], [
             "--workforce-contract",
             "config/store_workforce_monthly.v1.contract.json",
+            "--auto-backfill-from",
+            "2026-06",
         ])
 
 

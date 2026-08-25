@@ -68,10 +68,11 @@ OCR 合同脚本需要额外安装：
 
 ```powershell
 .\.venv\Scripts\python.exe -m scripts.build_franchise_operating_review `
+  --auto-backfill-from 2026-06 `
   --workforce-contract .\config\store_workforce_monthly.v1.contract.json
 ```
 
-生产默认只读人员出口：`/opt/management-dashboard/data/canonical-snapshot/store_workforce_monthly.csv`，正式契约为 `config/store_workforce_monthly.v1.contract.json`。Site 精确校验 25 列顺序、`data_version` 和生产 commit，并把每次实际文件 SHA-256 写入运行记录；SHA 变化本身不阻断正常月度刷新。Gate 未通过时不生成候选；同一月份、同一输入重复运行不会制造重复候选；不写 Dashboard。首次固定 9 家 2026-07 回放、产物结构和失败提示见 `docs/FRANCHISE_OPERATING_REVIEW_V0.1.md`。
+生产自动任务从2026-06起，每次只处理最早一个尚无成功报告的完整自然月；失败月份保留在队首，后续自动重试，全部追平后恢复最新完整月常规幂等运行。生产默认只读人员出口：`/opt/management-dashboard/data/canonical-snapshot/store_workforce_monthly.csv`，正式契约为 `config/store_workforce_monthly.v1.contract.json`。Site 精确校验 25 列顺序、`data_version` 和生产 commit，并把每次实际文件 SHA-256 写入运行记录；SHA 变化本身不阻断正常月度刷新。Gate 未通过时不生成候选；同一月份、同一输入重复运行不会制造重复候选；不写 Dashboard。首次固定 9 家 2026-07 回放、产物结构和失败提示见 `docs/FRANCHISE_OPERATING_REVIEW_V0.1.md`。
 
 只读检查 Hanson BI 数据新鲜度与对账：
 

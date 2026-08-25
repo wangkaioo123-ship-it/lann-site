@@ -7,7 +7,12 @@ from pathlib import Path
 
 from scripts.build_franchise_operating_review import build
 from services.franchise_operating_check import build_operating_check_candidates
-from services.franchise_operating_review import EVIDENCE_INSUFFICIENT, EVIDENCE_STRONG, build_review
+from services.franchise_operating_review import (
+    EVIDENCE_AUXILIARY,
+    EVIDENCE_INSUFFICIENT,
+    EVIDENCE_STRONG,
+    build_review,
+)
 from services.workforce_monthly import build_workforce_gate, load_workforce_monthly
 from tests.test_franchise_operating_check import monthly_rows
 
@@ -141,6 +146,39 @@ class FranchiseOperatingReviewTests(unittest.TestCase):
             gate = build_workforce_gate(load_workforce_monthly(path, workforce_contract()), "2026-07", {"L0001"}, ["L0001"])
         self.assertFalse(gate["ready"])
         self.assertIn("可信等级不足", gate["message"])
+
+    def test_june_low_confidence_is_auxiliary_and_never_strong(self):
+        operating_rows = monthly_rows()
+        for row, month in zip(
+            operating_rows,
+            ("2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06"),
+        ):
+            row["月份"] = month
+        operating = build_operating_check_candidates(
+            operating_rows,
+            today=date(2026, 8, 25),
+            target_month="2026-06",
+        )
+        candidate = operating["stores"]["L0001"]["candidate"]
+        self.assertIsNotNone(candidate)
+        rows = workforce_rows(confidence="low")[:6]
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "workforce.csv"
+            write_csv(path, HEADERS, rows)
+            dataset = load_workforce_monthly(path, workforce_contract())
+            gate = build_workforce_gate(dataset, "2026-06", {"L0001"}, ["L0001"])
+            review = build_review(
+                operating_rows,
+                operating,
+                dataset,
+                gate,
+                [{"store_id": "L0001", "store_name": "测试门店", "candidate_id": candidate["candidate_id"]}],
+            )
+        self.assertTrue(gate["ready"])
+        self.assertIn("只作辅助证据", "；".join(gate["limitations"]))
+        self.assertEqual(review["status"], "ready_for_business_review")
+        self.assertEqual(review["candidates"][0]["evidence_class"], EVIDENCE_AUXILIARY)
+        self.assertFalse(review["candidates"][0]["personnel_indicators"]["target_month_direct_signal"])
 
     def test_personal_level_header_is_rejected(self):
         headers = HEADERS[:-1] + ["employee_id"]
