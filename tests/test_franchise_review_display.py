@@ -206,6 +206,60 @@ class FranchiseReviewDisplayTests(unittest.TestCase):
         self.assertIn("2026-06", html_text)
         self.assertIn("2026-07", html_text)
 
+    def test_browser_escapes_script_terminator_and_never_uses_inner_html(self):
+        malicious_name = "测试店</script><script>window.injected=true</script>"
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            run_dir = root / "2026-07" / "run-2026-07"
+            run_dir.mkdir(parents=True)
+            review = {
+                "schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
+                "target_month": "2026-07",
+                "stores": [{"store_id": "L0001", "store_name": malicious_name}],
+            }
+            (run_dir / "business_review.json").write_text(json.dumps(review), encoding="utf-8")
+            manifest = {
+                "run_id": "run-2026-07",
+                "run_month": "2026-07",
+                "generated_at": "2026-08-26T00:00:00+00:00",
+                "status": "ready_for_business_review",
+                "dashboard_write_allowed": False,
+                "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
+                "outputs": {"business_review_json": "business_review.json"},
+            }
+            (run_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            write_business_review_browser(root)
+            html_text = (root / "business_review.html").read_text(encoding="utf-8")
+        self.assertNotIn("</script><script>window.injected", html_text)
+        self.assertIn("<\\/script><script>window.injected", html_text)
+        self.assertNotIn("innerHTML", html_text)
+
+    def test_browser_index_keeps_full_store_payload_without_truncation(self):
+        stores = [{"store_id": f"L{index:04d}", "store_name": f"门店{index}"} for index in range(1, 121)]
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            run_dir = root / "2026-07" / "run-2026-07"
+            run_dir.mkdir(parents=True)
+            review = {
+                "schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
+                "target_month": "2026-07",
+                "stores": stores,
+            }
+            (run_dir / "business_review.json").write_text(json.dumps(review, ensure_ascii=False), encoding="utf-8")
+            manifest = {
+                "run_id": "run-2026-07",
+                "run_month": "2026-07",
+                "generated_at": "2026-08-26T00:00:00+00:00",
+                "status": "ready_for_business_review",
+                "dashboard_write_allowed": False,
+                "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
+                "outputs": {"business_review_json": "business_review.json"},
+            }
+            (run_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            index = write_business_review_browser(root)
+        self.assertEqual(len(index["runs"][0]["review"]["stores"]), 120)
+        self.assertEqual(index["runs"][0]["review"]["stores"][-1]["store_id"], "L0120")
+
 
 if __name__ == "__main__":
     unittest.main()
