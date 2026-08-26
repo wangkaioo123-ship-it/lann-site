@@ -2,6 +2,14 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-08-26 加盟门店业绩差异月度评审展示
+
+- 类型：只读业务展示 / 可解释性 / 测试
+- 内容：在既有加盟经营异常月度评审产物上增加全店业务评审JSON、Markdown和静态月份切换页。候选数为0时仍展示全部形成连续比较窗口的门店；按近2月营收相对此前3月的直接变化率排序，不新增风险评分。每店展示完整月营收、订单客次、总客数、新老客、折后客单、工作人天、产值/生产率、可用人员聚合、现行两条规则路径的门槛距离、可能解释和证据缺口。固定9家历史回放与正常全量扫描明确分层；人员事实只作交叉证据，低可信不形成强结论；继续`dashboard_write_allowed=false`。
+- 改动文件：`services/franchise_review_display.py`、`scripts/build_franchise_operating_review.py`、`tests/test_franchise_review_display.py`、`tests/test_franchise_operating_backfill.py`、`README.md`、`docs/FRANCHISE_OPERATING_REVIEW_V0.1.md`、`docs/server_batch.md`、`DEVELOPMENT_LOG.md`
+- commit：见本次聚焦本地提交。
+- 验证方法：全店0候选展示、字段事实/规则距离、低可信人员边界、2026-06/07月份切换、展示schema补跑专项测试；全量unittest、Python compileall及git diff-check。
+
 ## 2026-08-25 加盟经营异常完整月自动补跑
 
 - 类型：生产自动化 / 失败恢复 / 测试

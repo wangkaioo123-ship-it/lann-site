@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.build_franchise_operating_review import plan_auto_backfill, run_auto_backfill
+from services.franchise_review_display import BUSINESS_REVIEW_SCHEMA_VERSION
 
 
 def write_manifest(root: Path, month: str, status="ready_for_business_review", dashboard_write_allowed=False):
@@ -17,7 +18,10 @@ def write_manifest(root: Path, month: str, status="ready_for_business_review", d
         "run_month": month,
         "status": status,
         "dashboard_write_allowed": dashboard_write_allowed,
+        "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
+        "outputs": {"business_review_json": "business_review.json"},
     }
+    (run_dir / "business_review.json").write_text("{}", encoding="utf-8")
     (run_dir / "manifest.json").write_text(json.dumps(payload), encoding="utf-8")
     return payload, run_dir
 
@@ -57,6 +61,16 @@ class FranchiseOperatingBackfillTests(unittest.TestCase):
             plan = plan_auto_backfill(root, today=date(2026, 8, 25))
         self.assertEqual(plan["selected_month"], "2026-06")
         self.assertFalse(plan["dashboard_write_allowed"])
+
+    def test_old_success_without_business_display_is_backfilled_once(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            payload, run_dir = write_manifest(root, "2026-06")
+            payload.pop("business_review_schema_version")
+            payload["outputs"] = {}
+            (run_dir / "manifest.json").write_text(json.dumps(payload), encoding="utf-8")
+            plan = plan_auto_backfill(root, today=date(2026, 8, 25))
+        self.assertEqual(plan["selected_month"], "2026-06")
 
     def test_caught_up_run_uses_regular_latest_and_records_duplicate(self):
         with tempfile.TemporaryDirectory() as temp:

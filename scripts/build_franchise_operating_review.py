@@ -16,6 +16,12 @@ from services.franchise_operating_check import (
     month_index,
 )
 from services.franchise_operating_review import REVIEW_SCHEMA_VERSION, build_review, render_markdown
+from services.franchise_review_display import (
+    BUSINESS_REVIEW_SCHEMA_VERSION,
+    build_business_review,
+    render_business_markdown,
+    write_business_review_browser,
+)
 from services.workforce_monthly import (
     CONTRACT_VERSION as WORKFORCE_CONTRACT_VERSION,
     WorkforceContractError,
@@ -127,6 +133,8 @@ def successful_review_months(output_root: str | Path) -> set[str]:
             payload.get("schema_version") == "franchise-operating-run/v0.1"
             and payload.get("status") == "ready_for_business_review"
             and payload.get("dashboard_write_allowed") is False
+            and payload.get("business_review_schema_version") == BUSINESS_REVIEW_SCHEMA_VERSION
+            and (manifest_path.parent / str((payload.get("outputs") or {}).get("business_review_json") or "")).is_file()
             and month_index(run_month) is not None
         ):
             successful.add(run_month)
@@ -236,12 +244,22 @@ def build(
     candidate_store_ids = [row["store_id"] for row in candidate_order]
     workforce_gate = build_workforce_gate(workforce_dataset, target_month, scope_store_ids, candidate_store_ids)
     review = build_review(monthly_rows, operating_result, workforce_dataset, workforce_gate, candidate_order)
+    business_review = build_business_review(
+        monthly_rows,
+        operating_result,
+        workforce_dataset,
+        workforce_gate,
+        freeze_manifest,
+    )
+    business_review["status"] = review["status"]
+    business_review["data_gate"]["review_issues"] = review["data_gate"].get("issues", [])
 
     identity = {
         "target_month": target_month,
         "rule_version": RULE_VERSION,
         "candidate_rule_version": CANDIDATE_RULE_VERSION,
         "review_schema_version": REVIEW_SCHEMA_VERSION,
+        "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
         "workforce_contract_version": workforce_dataset.get("contract_version"),
         "operating_sha256": sha256_file(operating_path),
         "workforce_sha256": workforce_dataset.get("sha256"),
@@ -257,6 +275,7 @@ def build(
     manifest_path = run_dir / "manifest.json"
     if manifest_path.is_file():
         existing = json.loads(manifest_path.read_text(encoding="utf-8"))
+        write_business_review_browser(output_root)
         print(f"unchanged run_id={run_id} status={existing.get('status')} path={run_dir}")
         return existing, run_dir, True
 
@@ -272,6 +291,7 @@ def build(
         "rule_version": RULE_VERSION,
         "candidate_rule_version": CANDIDATE_RULE_VERSION,
         "review_schema_version": REVIEW_SCHEMA_VERSION,
+        "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
         "workforce_contract_version": workforce_dataset.get("contract_version"),
         "inputs": {
             "operating": {"path": str(operating_path), "sha256": identity["operating_sha256"], "row_count": len(monthly_rows)},
@@ -291,12 +311,18 @@ def build(
         "dashboard_write_allowed": False,
         "outputs": {
             "gate": "data_gate.json", "review_json": "review.json", "review_markdown": "review.md",
+            "business_review_json": "business_review.json",
+            "business_review_markdown": "business_review.md",
             "candidate_csv": "candidates.csv" if review["candidates"] else None,
         },
     }
     write_json(run_dir / "data_gate.json", review["data_gate"])
     write_json(run_dir / "review.json", review)
     (run_dir / "review.md").write_text(render_markdown(review, manifest), encoding="utf-8")
+    write_json(run_dir / "business_review.json", business_review)
+    (run_dir / "business_review.md").write_text(
+        render_business_markdown(business_review, manifest), encoding="utf-8"
+    )
     if review["candidates"]:
         write_candidate_csv(run_dir / "candidates.csv", review["candidates"])
     write_json(manifest_path, manifest)
@@ -304,6 +330,7 @@ def build(
     write_json(output_root / "last_attempt.json", pointer)
     if review["status"] == "ready_for_business_review":
         write_json(output_root / "latest_success.json", pointer)
+    write_business_review_browser(output_root)
     print(f"wrote run_id={run_id} status={review['status']} candidates={review['candidate_count']} path={run_dir}")
     return manifest, run_dir, False
 
