@@ -117,13 +117,44 @@
         "rent_to_sales_ratio": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["value", "status", "source_field", "numerator", "numerator_scope"],
+          "required": [
+            "value",
+            "status",
+            "source_field",
+            "calculation",
+            "value_tolerance",
+            "numerator",
+            "numerator_scope",
+            "source_value",
+            "source_value_field",
+            "source_comparison_tolerance",
+            "source_value_status",
+            "source_value_mismatch",
+            "absolute_difference",
+            "quality_note"
+          ],
           "properties": {
             "value": {"$ref": "#/$defs/nullable_number"},
             "status": {"enum": ["known", "unknown"]},
             "source_field": {"$ref": "#/$defs/nullable_string"},
+            "calculation": {"const": "known_occupancy_cost_total / operating_revenue"},
+            "value_tolerance": {"const": 0.00000001},
             "numerator": {"const": "known_occupancy_cost_total"},
-            "numerator_scope": {"const": "base_rent_plus_property_fee_combined"}
+            "numerator_scope": {"const": "base_rent_plus_property_fee_combined"},
+            "source_value": {"$ref": "#/$defs/nullable_number"},
+            "source_value_field": {"$ref": "#/$defs/nullable_string"},
+            "source_comparison_tolerance": {"const": 0.000051},
+            "source_value_status": {
+              "enum": [
+                "matched",
+                "source_value_mismatch",
+                "source_value_unavailable",
+                "not_comparable"
+              ]
+            },
+            "source_value_mismatch": {"type": ["boolean", "null"]},
+            "absolute_difference": {"$ref": "#/$defs/nullable_number"},
+            "quality_note": {"type": "string", "minLength": 1}
           }
         },
         "data_cutoff": {

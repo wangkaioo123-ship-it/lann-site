@@ -10,7 +10,10 @@ from scripts.build_franchise_operating_review import build
 from services.franchise_operating_check import build_operating_check_candidates
 from services.franchise_review_display import (
     BUSINESS_REVIEW_SCHEMA_VERSION,
+    RATIO_SOURCE_COMPARISON_TOLERANCE,
+    RATIO_VALUE_TOLERANCE,
     THREE_MONTH_OPERATING_SCHEMA_VERSION,
+    _three_month_operating_contract,
     build_business_review,
     validate_three_month_operating_contract,
     write_business_review_browser,
@@ -162,6 +165,9 @@ class FranchiseReviewDisplayTests(unittest.TestCase):
         self.assertEqual(july["base_rent"]["status"], "unknown_unallocated_from_combined_amount")
         self.assertIsNone(july["management_fee"]["amount_yuan"])
         self.assertEqual(july["rent_to_sales_ratio"]["value"], 0.25)
+        self.assertEqual(july["rent_to_sales_ratio"]["source_value"], 0.25)
+        self.assertEqual(july["rent_to_sales_ratio"]["source_value_status"], "matched")
+        self.assertFalse(july["rent_to_sales_ratio"]["source_value_mismatch"])
         self.assertEqual(
             july["rent_to_sales_ratio"]["numerator_scope"],
             "base_rent_plus_property_fee_combined",
@@ -174,11 +180,75 @@ class FranchiseReviewDisplayTests(unittest.TestCase):
         )
         self.assertNotIn('"profit"', json.dumps(contract, ensure_ascii=False))
 
+    def test_contradictory_source_ratio_is_diagnostic_and_amount_ratio_is_authoritative(self):
+        rows = add_display_fields(
+            monthly_rows(revenues=(100000,) * 6, rent_ratios=(0.6,) * 6)
+        )
+        rows[-1]["租售比"] = "0.1"
+        review = self.build_review(rows, workforce_for(("L0001",)))
+        contract = review["stores"][0]["recent_three_month_operating"]
+        july = contract["months"][-1]
+
+        self.assertEqual(july["operating_revenue"]["amount_yuan"], 100000)
+        self.assertEqual(july["known_occupancy_cost_total"]["amount_yuan"], 60000)
+        self.assertEqual(july["rent_to_sales_ratio"]["value"], 0.6)
+        self.assertEqual(july["rent_to_sales_ratio"]["source_value"], 0.1)
+        self.assertEqual(
+            july["rent_to_sales_ratio"]["source_value_status"],
+            "source_value_mismatch",
+        )
+        self.assertTrue(july["rent_to_sales_ratio"]["source_value_mismatch"])
+        self.assertIn("不一致", july["rent_to_sales_ratio"]["quality_note"])
+        validate_three_month_operating_contract(contract, "2026-07")
+
+        wrong_formal_value = copy.deepcopy(contract)
+        wrong_formal_value["months"][-1]["rent_to_sales_ratio"]["value"] = 0.1
+        with self.assertRaisesRegex(ValueError, "正式租售比.*不一致"):
+            validate_three_month_operating_contract(wrong_formal_value, "2026-07")
+
+    def test_zero_or_missing_revenue_never_produces_formal_ratio(self):
+        for label, latest_revenue in (("zero", "0"), ("missing", "")):
+            with self.subTest(label=label):
+                rows = [
+                    {
+                        "月份": month,
+                        "实际营收": "100000" if month != "2026-07" else latest_revenue,
+                        "月租金": "60000",
+                        "租售比": "0.1",
+                        "月度Gate纳入": "是",
+                    }
+                    for month in ("2026-05", "2026-06", "2026-07")
+                ]
+                contract = _three_month_operating_contract(rows, "2026-07")
+                july_ratio = contract["months"][-1]["rent_to_sales_ratio"]
+                self.assertIsNone(july_ratio["value"])
+                self.assertEqual(july_ratio["status"], "unknown")
+                self.assertEqual(july_ratio["source_value"], 0.1)
+                self.assertEqual(july_ratio["source_value_status"], "not_comparable")
+                self.assertIsNone(july_ratio["source_value_mismatch"])
+
+    def test_source_ratio_tolerance_accepts_four_decimal_rounding(self):
+        rows = [
+            {
+                "月份": month,
+                "实际营收": "3",
+                "月租金": "1",
+                "租售比": "0.3333",
+                "月度Gate纳入": "是",
+            }
+            for month in ("2026-05", "2026-06", "2026-07")
+        ]
+        contract = _three_month_operating_contract(rows, "2026-07")
+        ratio = contract["months"][-1]["rent_to_sales_ratio"]
+        self.assertEqual(ratio["value"], 0.33333333)
+        self.assertEqual(ratio["source_value_status"], "matched")
+        self.assertFalse(ratio["source_value_mismatch"])
+        self.assertLessEqual(ratio["absolute_difference"], RATIO_SOURCE_COMPARISON_TOLERANCE)
+
     def test_recent_three_month_contract_uses_null_not_zero_when_cost_is_unknown(self):
         rows = add_display_fields(monthly_rows(revenues=(300000,) * 6, rent_ratios=(0.2,) * 6))
         for row in rows[-3:]:
             row["月租金"] = ""
-            row["租售比"] = ""
             row["租金状态"] = "缺租金"
             row["租金来源文件"] = ""
         review = self.build_review(rows, workforce_for(("L0001",)))
@@ -189,6 +259,8 @@ class FranchiseReviewDisplayTests(unittest.TestCase):
             self.assertIsNone(month["known_occupancy_cost_total"]["amount_yuan"])
             self.assertEqual(month["known_occupancy_cost_total"]["status"], "unknown")
             self.assertIsNone(month["rent_to_sales_ratio"]["value"])
+            self.assertEqual(month["rent_to_sales_ratio"]["source_value"], 0.2)
+            self.assertEqual(month["rent_to_sales_ratio"]["source_value_status"], "not_comparable")
             self.assertEqual(
                 month["data_quality"]["completeness_status"],
                 "complete_operating_cost_unknown",
@@ -208,6 +280,15 @@ class FranchiseReviewDisplayTests(unittest.TestCase):
         )
         self.assertEqual(schema["properties"]["months"]["minItems"], 3)
         self.assertEqual(schema["properties"]["months"]["maxItems"], 3)
+        ratio_schema = schema["$defs"]["month_record"]["properties"]["rent_to_sales_ratio"]
+        self.assertEqual(
+            ratio_schema["properties"]["value_tolerance"]["const"],
+            RATIO_VALUE_TOLERANCE,
+        )
+        self.assertEqual(
+            ratio_schema["properties"]["source_comparison_tolerance"]["const"],
+            RATIO_SOURCE_COMPARISON_TOLERANCE,
+        )
         required = set(schema["$defs"]["month_record"]["required"])
         self.assertTrue(
             {

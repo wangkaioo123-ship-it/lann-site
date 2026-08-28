@@ -2,6 +2,14 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-08-28 近三个月契约租售比金额一致性修复
+
+- 类型：QA阻断修复 / 输出契约校验
+- 内容：正式租售比改为按已知租金物业合计除以营业额重算，上游比率降为诊断信息；矛盾时记录 `source_value_mismatch`，不再展示错误原值。营业额缺失、非正数或成本未知时保持 `null/unknown`。新增正式值浮点容差与上游四位小数比较容差，并在运行校验、JSON Schema、文档和反例测试中统一。
+- 改动文件：`services/franchise_review_display.py`、`ai/schemas/franchise_store_three_month_operating.v0.1.schema.json`、`tests/test_franchise_review_display.py`、`README.md`、`docs/FRANCHISE_OPERATING_REVIEW_V0.1.md`、`DEVELOPMENT_LOG.md`
+- commit：见本次追加聚焦提交。
+- 验证方法：金额一致、上游矛盾、营业额为0/缺失、成本缺失专项测试；全量unittest、Python compileall、JSON Schema语法及git diff-check。
+
 ## 2026-08-28 加盟评审近三个月基础经营数据契约
 
 - 类型：只读输出契约 / 成本口径治理 / 向后兼容

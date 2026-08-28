@@ -59,7 +59,8 @@ Site 不按相似列名猜测。运行时通过 `--workforce-contract` 读取精
 - 窗口固定为目标完整自然月及其前两个完整自然月，按月份升序输出。
 - `operating_revenue` 直接映射经营月表 `实际营收`；保留 `营收数据来源`、`营收数据完整性`、质量备注和自然月截止日。
 - 现有 `月租金` 来自上游正式字段 `当前年租金+物业费（月）`，因此只写入 `known_occupancy_cost_total`。该金额是纯租金与物业费的合计，拆分未知；`base_rent`、`property_fee` 必须保持 `null/unknown_unallocated_from_combined_amount`，不得按比例猜拆。
-- `rent_to_sales_ratio` 直接映射现有 `租售比`，并明确分子为上述租金与物业费合计，不将其误称为纯租金比率。
+- `rent_to_sales_ratio.value` 不直接信任上游 `租售比`，而是以 `known_occupancy_cost_total / operating_revenue` 重算为正式展示值。只有营业额大于0且占用成本合计已知时才输出；营业额缺失、小于等于0或成本未知时保持 `null/unknown`。
+- 上游 `租售比` 仅保留为 `source_value` 诊断信息。与金额重算值差异超过 `0.000051` 时标记 `source_value_mismatch`，错误原值不进入正式展示；该容差覆盖上游四位小数发布的最大舍入误差。正式值保留8位小数，schema 金额一致性容差为 `0.00000001`，用于吸收 JSON 浮点序列化误差。
 - 现行经营月表没有正式管理费和其他固定成本字段，因此 `management_fee=null/unknown`、`other_known_fixed_costs=[]`。未知成本不得写0。
 - Site 不计算财务利润。契约明确排除人工、税费、水电、耗材、营销、维修、折旧摊销及其他经营成本；已知占用成本合计不得称为完整总成本。
 - 根节点 `three_month_operating_contract` 说明版本、窗口和成本边界；manifest 同时记录 `business_review_schema_version` 与 `three_month_operating_schema_version`，Dashboard 不需要猜字段语义。

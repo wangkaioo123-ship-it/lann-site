@@ -18,6 +18,8 @@ from services.franchise_operating_check import (
 
 BUSINESS_REVIEW_SCHEMA_VERSION = "franchise-operating-business-review/v0.2"
 THREE_MONTH_OPERATING_SCHEMA_VERSION = "franchise-store-three-month-operating/v0.1"
+RATIO_VALUE_TOLERANCE = 0.00000001
+RATIO_SOURCE_COMPARISON_TOLERANCE = 0.000051
 
 DISPLAY_METRICS = (
     ("revenue", "实际营收", "完整月营收"),
@@ -74,6 +76,56 @@ def _amount_fact(value, source_field, status=None, reason=None):
     }
 
 
+def _rent_to_sales_ratio(revenue, combined_occupancy_cost, source_ratio):
+    can_calculate = (
+        revenue is not None
+        and revenue > 0
+        and combined_occupancy_cost is not None
+    )
+    calculated = combined_occupancy_cost / revenue if can_calculate else None
+    if calculated is not None and source_ratio is not None:
+        difference = abs(source_ratio - calculated)
+        mismatch = difference > RATIO_SOURCE_COMPARISON_TOLERANCE
+        source_status = "source_value_mismatch" if mismatch else "matched"
+        quality_note = (
+            "正式值已按金额重算；上游原始租售比与金额计算值不一致，原值仅供诊断。"
+            if mismatch
+            else "正式值已按金额重算；上游原始租售比在四位小数发布容差内一致。"
+        )
+    elif calculated is not None:
+        difference = None
+        mismatch = None
+        source_status = "source_value_unavailable"
+        quality_note = "正式值已按金额重算；上游原始租售比缺失。"
+    else:
+        difference = None
+        mismatch = None
+        source_status = "not_comparable" if source_ratio is not None else "source_value_unavailable"
+        if revenue is None:
+            reason = "营业额缺失"
+        elif revenue <= 0:
+            reason = "营业额小于或等于0"
+        else:
+            reason = "已知租金与物业费合计缺失"
+        quality_note = f"{reason}，不能形成正式租售比；上游原值仅保留为诊断信息。"
+    return {
+        "value": _round(calculated, 8),
+        "status": "known" if calculated is not None else "unknown",
+        "source_field": "月租金 / 实际营收" if calculated is not None else None,
+        "calculation": "known_occupancy_cost_total / operating_revenue",
+        "value_tolerance": RATIO_VALUE_TOLERANCE,
+        "numerator": "known_occupancy_cost_total",
+        "numerator_scope": "base_rent_plus_property_fee_combined",
+        "source_value": _round(source_ratio, 8),
+        "source_value_field": "租售比" if source_ratio is not None else None,
+        "source_comparison_tolerance": RATIO_SOURCE_COMPARISON_TOLERANCE,
+        "source_value_status": source_status,
+        "source_value_mismatch": mismatch,
+        "absolute_difference": _round(difference, 8),
+        "quality_note": quality_note,
+    }
+
+
 def _three_month_operating_detail(row):
     month = row.get("月份")
     revenue = number(row.get("实际营收"))
@@ -123,13 +175,11 @@ def _three_month_operating_detail(row):
             reason="现行经营月表没有正式管理费字段。",
         ),
         "other_known_fixed_costs": [],
-        "rent_to_sales_ratio": {
-            "value": _round(rent_ratio),
-            "status": "known" if rent_ratio is not None else "unknown",
-            "source_field": "租售比" if rent_ratio is not None else None,
-            "numerator": "known_occupancy_cost_total",
-            "numerator_scope": "base_rent_plus_property_fee_combined",
-        },
+        "rent_to_sales_ratio": _rent_to_sales_ratio(
+            revenue,
+            combined_occupancy_cost,
+            rent_ratio,
+        ),
         "data_cutoff": {
             "complete_month": month,
             "cutoff_date": _month_end(month),
@@ -210,9 +260,32 @@ def validate_three_month_operating_contract(payload, target_month):
         if item["management_fee"].get("amount_yuan") is None and item["management_fee"].get("status") != "unknown":
             raise ValueError("未知管理费必须保持unknown")
         ratio = item["rent_to_sales_ratio"]
-        expected_ratio_status = "known" if ratio.get("value") is not None else "unknown"
-        if ratio.get("status") != expected_ratio_status:
-            raise ValueError("租售比数值与状态不一致")
+        revenue_amount = revenue.get("amount_yuan")
+        occupancy_amount = known_total.get("amount_yuan")
+        can_calculate_ratio = (
+            revenue_amount is not None
+            and revenue_amount > 0
+            and occupancy_amount is not None
+        )
+        if can_calculate_ratio:
+            expected_ratio = occupancy_amount / revenue_amount
+            if ratio.get("status") != "known" or ratio.get("value") is None:
+                raise ValueError("金额可计算时租售比必须为known")
+            if abs(ratio["value"] - expected_ratio) > RATIO_VALUE_TOLERANCE:
+                raise ValueError("正式租售比与营业额、已知占用成本合计不一致")
+        elif ratio.get("status") != "unknown" or ratio.get("value") is not None:
+            raise ValueError("营业额非正数、缺失或成本未知时租售比必须为unknown/null")
+
+        source_ratio = ratio.get("source_value")
+        if can_calculate_ratio and source_ratio is not None:
+            source_mismatch = abs(source_ratio - expected_ratio) > RATIO_SOURCE_COMPARISON_TOLERANCE
+            expected_source_status = "source_value_mismatch" if source_mismatch else "matched"
+            if ratio.get("source_value_mismatch") is not source_mismatch:
+                raise ValueError("上游租售比矛盾标记与金额核对结果不一致")
+            if ratio.get("source_value_status") != expected_source_status:
+                raise ValueError("上游租售比质量状态与金额核对结果不一致")
+        elif ratio.get("source_value_mismatch") is not None:
+            raise ValueError("无法核对上游租售比时矛盾标记必须为null")
     return payload
 
 
@@ -549,6 +622,12 @@ def build_business_review(
             "month_count": 3,
             "window_end_month": target_month,
             "definition": "目标完整自然月及其前两个完整自然月，按月份升序输出。",
+            "ratio_policy": {
+                "authoritative_calculation": "known_occupancy_cost_total / operating_revenue",
+                "value_tolerance": RATIO_VALUE_TOLERANCE,
+                "source_comparison_tolerance": RATIO_SOURCE_COMPARISON_TOLERANCE,
+                "source_ratio_role": "diagnostic_only",
+            },
             "cost_scope": {
                 "known_occupancy_cost_total_source": "经营月表‘月租金’，上游原字段为‘当前年租金+物业费（月）’。",
                 "base_rent_and_property_fee_split_available": False,
@@ -655,19 +734,20 @@ def render_business_markdown(review, manifest):
             [
                 f"### {store['store_name']}（{store['store_id']}）",
                 "",
-                "| 月份 | 营业额 | 已知租金+物业费合计 | 纯租金 | 物业费 | 租售比 | 成本完整性 |",
-                "|---|---:|---:|---:|---:|---:|---|",
+                "| 月份 | 营业额 | 已知租金+物业费合计 | 纯租金 | 物业费 | 重算租售比 | 上游比率核对 | 成本完整性 |",
+                "|---|---:|---:|---:|---:|---:|---|---|",
             ]
         )
         for month in store["recent_three_month_operating"]["months"]:
             lines.append(
-                "| {month} | {revenue} | {occupancy} | {base_rent} | {property_fee} | {ratio} | {completeness} |".format(
+                "| {month} | {revenue} | {occupancy} | {base_rent} | {property_fee} | {ratio} | {ratio_check} | {completeness} |".format(
                     month=month["month"],
                     revenue=_num(month["operating_revenue"]["amount_yuan"]),
                     occupancy=_num(month["known_occupancy_cost_total"]["amount_yuan"]),
                     base_rent=_num(month["base_rent"]["amount_yuan"]),
                     property_fee=_num(month["property_fee"]["amount_yuan"]),
                     ratio=_pct(month["rent_to_sales_ratio"]["value"]),
+                    ratio_check=month["rent_to_sales_ratio"]["source_value_status"],
                     completeness=month["data_quality"]["completeness_status"],
                 )
             )
