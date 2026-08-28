@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lann.local/schemas/franchise_store_three_month_operating.v0.1.schema.json",
+  "title": "LANN加盟门店近三个月基础经营数据",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "months"],
+  "properties": {
+    "schema_version": {
+      "const": "franchise-store-three-month-operating/v0.1"
+    },
+    "months": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/month_record"
+      }
+    }
+  },
+  "$defs": {
+    "nullable_number": {
+      "type": ["number", "null"]
+    },
+    "nullable_string": {
+      "type": ["string", "null"]
+    },
+    "amount_fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount_yuan", "status", "source_field", "reason"],
+      "properties": {
+        "amount_yuan": {"$ref": "#/$defs/nullable_number"},
+        "status": {
+          "enum": ["known", "unknown", "unknown_unallocated_from_combined_amount"]
+        },
+        "source_field": {"$ref": "#/$defs/nullable_string"},
+        "reason": {"$ref": "#/$defs/nullable_string"}
+      }
+    },
+    "known_occupancy_cost_total": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "amount_yuan",
+        "status",
+        "included_components",
+        "excluded_components",
+        "allocation_status",
+        "source_field",
+        "upstream_source_field"
+      ],
+      "properties": {
+        "amount_yuan": {"$ref": "#/$defs/nullable_number"},
+        "status": {"enum": ["known_combined_unallocated", "unknown"]},
+        "included_components": {
+          "type": "array",
+          "items": {"enum": ["base_rent", "property_fee"]},
+          "uniqueItems": true
+        },
+        "excluded_components": {
+          "type": "array",
+          "items": {"enum": ["management_fee", "other_fixed_costs"]},
+          "uniqueItems": true
+        },
+        "allocation_status": {"enum": ["unallocated", "unknown"]},
+        "source_field": {"$ref": "#/$defs/nullable_string"},
+        "upstream_source_field": {"$ref": "#/$defs/nullable_string"}
+      }
+    },
+    "other_fixed_cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cost_key", "amount_yuan", "status", "source_field", "source"],
+      "properties": {
+        "cost_key": {"type": "string", "minLength": 1},
+        "amount_yuan": {"type": "number"},
+        "status": {"const": "known"},
+        "source_field": {"type": "string", "minLength": 1},
+        "source": {"$ref": "#/$defs/nullable_string"}
+      }
+    },
+    "month_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "month",
+        "operating_revenue",
+        "base_rent",
+        "property_fee",
+        "known_occupancy_cost_total",
+        "management_fee",
+        "other_known_fixed_costs",
+        "rent_to_sales_ratio",
+        "data_cutoff",
+        "data_source",
+        "data_quality"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "franchise-store-three-month-operating/v0.1"
+        },
+        "month": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        },
+        "operating_revenue": {"$ref": "#/$defs/amount_fact"},
+        "base_rent": {"$ref": "#/$defs/amount_fact"},
+        "property_fee": {"$ref": "#/$defs/amount_fact"},
+        "known_occupancy_cost_total": {"$ref": "#/$defs/known_occupancy_cost_total"},
+        "management_fee": {"$ref": "#/$defs/amount_fact"},
+        "other_known_fixed_costs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/other_fixed_cost"}
+        },
+        "rent_to_sales_ratio": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value", "status", "source_field", "numerator", "numerator_scope"],
+          "properties": {
+            "value": {"$ref": "#/$defs/nullable_number"},
+            "status": {"enum": ["known", "unknown"]},
+            "source_field": {"$ref": "#/$defs/nullable_string"},
+            "numerator": {"const": "known_occupancy_cost_total"},
+            "numerator_scope": {"const": "base_rent_plus_property_fee_combined"}
+          }
+        },
+        "data_cutoff": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["complete_month", "cutoff_date"],
+          "properties": {
+            "complete_month": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+            },
+            "cutoff_date": {
+              "type": ["string", "null"],
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+            }
+          }
+        },
+        "data_source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["operating_revenue", "occupancy_cost", "occupancy_cost_note"],
+          "properties": {
+            "operating_revenue": {"$ref": "#/$defs/nullable_string"},
+            "occupancy_cost": {"$ref": "#/$defs/nullable_string"},
+            "occupancy_cost_note": {"$ref": "#/$defs/nullable_string"}
+          }
+        },
+        "data_quality": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "monthly_gate",
+            "operating_revenue_completeness",
+            "operating_quality_note",
+            "occupancy_cost_status",
+            "completeness_status",
+            "confidence_status"
+          ],
+          "properties": {
+            "monthly_gate": {"enum": ["included", "excluded"]},
+            "operating_revenue_completeness": {"type": "string"},
+            "operating_quality_note": {"$ref": "#/$defs/nullable_string"},
+            "occupancy_cost_status": {"type": "string"},
+            "completeness_status": {
+              "enum": [
+                "complete_operating_partial_cost_scope",
+                "complete_operating_cost_unknown",
+                "incomplete_operating"
+              ]
+            },
+            "confidence_status": {
+              "enum": [
+                "operating_known_cost_combined_unallocated",
+                "operating_known_cost_unknown",
+                "insufficient_operating_data"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

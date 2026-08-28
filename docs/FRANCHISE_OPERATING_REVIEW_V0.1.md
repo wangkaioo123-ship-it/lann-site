@@ -52,6 +52,20 @@ Site 不按相似列名猜测。运行时通过 `--workforce-contract` 读取精
 
 每家门店同时列出两条现行候选路径的实际值、门槛、是否达到及尚差幅度：经营组合下降路径为营收下降至少8%，并伴随总客数/老客至少下降5%、新客至少下降15%或工作人天下降至少8%；租金压力路径为近3月平均租售比高于25%，且营收下降至少3%。这些只是对既有`franchise-operating-check/v0.1`的透明解释，没有调整阈值。
 
+## 近三个月基础经营数据契约
+
+`business_review.json` 的展示版本为 `franchise-operating-business-review/v0.2`。每家参与门店新增 `recent_three_month_operating`，正式子契约为 `franchise-store-three-month-operating/v0.1`，JSON Schema 位于 `ai/schemas/franchise_store_three_month_operating.v0.1.schema.json`。
+
+- 窗口固定为目标完整自然月及其前两个完整自然月，按月份升序输出。
+- `operating_revenue` 直接映射经营月表 `实际营收`；保留 `营收数据来源`、`营收数据完整性`、质量备注和自然月截止日。
+- 现有 `月租金` 来自上游正式字段 `当前年租金+物业费（月）`，因此只写入 `known_occupancy_cost_total`。该金额是纯租金与物业费的合计，拆分未知；`base_rent`、`property_fee` 必须保持 `null/unknown_unallocated_from_combined_amount`，不得按比例猜拆。
+- `rent_to_sales_ratio` 直接映射现有 `租售比`，并明确分子为上述租金与物业费合计，不将其误称为纯租金比率。
+- 现行经营月表没有正式管理费和其他固定成本字段，因此 `management_fee=null/unknown`、`other_known_fixed_costs=[]`。未知成本不得写0。
+- Site 不计算财务利润。契约明确排除人工、税费、水电、耗材、营销、维修、折旧摊销及其他经营成本；已知占用成本合计不得称为完整总成本。
+- 根节点 `three_month_operating_contract` 说明版本、窗口和成本边界；manifest 同时记录 `business_review_schema_version` 与 `three_month_operating_schema_version`，Dashboard 不需要猜字段语义。
+
+旧成功月份若没有当前两项版本，会由既有自动补跑从最早缺失月重新生成新 run；旧 run 目录不覆盖、不删除。
+
 此前固定9家是2026-07历史校准回放，需要显式`--candidate-freeze`；正常自动运行不使用冻结名单，而是全量扫描。二者的候选数不能直接横比。页面会显示本次运行模式，并明确“全量扫描0候选”只代表本次输入未达到规则门槛。
 
 证据归类规则固定为：近 2 月月均人数较此前 3 月下降至少 8%、目标月末较上月末减少至少 1 人，或最近单月离职+调出至少 2 人（最近两月合计至少 3 人）时，视为存在人员变化信号。鉴于 2026-01—06 只能作辅助，只有“目标月事件覆盖完整且离职+调出至少 2 人”，或“目标月与上月均有中/高可信完整快照且月末减少至少 1 人”，并同时与营收及至少一项客次/工作人天/生产率同向下降，才归为“人员侧较强交叉证据”。仅由早期估算月份形成的趋势最多归为“有辅助证据”。这些条件只整理证据，不参与候选生成。
@@ -109,7 +123,7 @@ franchise_operating_reviews/
     ├── data_gate.json
     ├── review.json
     ├── review.md
-    ├── business_review.json  # 全部参与计算门店的结构化业务评审
+    ├── business_review.json  # 全部参与计算门店的结构化业务评审，含每店近3个完整月基础经营数据
     ├── business_review.md    # 全店差异排序与规则距离
     └── candidates.csv       # Gate通过时才有
 ```

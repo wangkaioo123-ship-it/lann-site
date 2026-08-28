@@ -74,7 +74,7 @@ OCR 合同脚本需要额外安装：
 
 生产自动任务从2026-06起，每次只处理最早一个尚无成功报告的完整自然月；失败月份保留在队首，后续自动重试，全部追平后恢复最新完整月常规幂等运行。生产默认只读人员出口：`/opt/management-dashboard/data/canonical-snapshot/store_workforce_monthly.csv`，正式契约为 `config/store_workforce_monthly.v1.contract.json`。Site 精确校验 25 列顺序、`data_version` 和生产 commit，并把每次实际文件 SHA-256 写入运行记录；SHA 变化本身不阻断正常月度刷新。Gate 未通过时不生成候选；同一月份、同一输入重复运行不会制造重复候选；不写 Dashboard。首次固定 9 家 2026-07 回放、产物结构和失败提示见 `docs/FRANCHISE_OPERATING_REVIEW_V0.1.md`。
 
-每次成功运行还生成全店只读业务评审。`data/staging/franchise_operating_reviews/business_review.html`可在已成功月份间切换；即使候选数为0，也会按营收直接变化率展示全部参与计算门店、目标月经营/人员事实、现行门槛距离、可能解释与证据缺口。该页面不使用综合风险评分，不写Dashboard，也不会用固定9家历史校准名单替代正常全量扫描。
+每次成功运行还生成全店只读业务评审。`data/staging/franchise_operating_reviews/business_review.html`可在已成功月份间切换；即使候选数为0，也会按营收直接变化率展示全部参与计算门店、目标月经营/人员事实、现行门槛距离、可能解释与证据缺口。`business_review.json` 同时按 `franchise-store-three-month-operating/v0.1` 输出每店最近3个完整自然月的营业额、已知租金与物业费合计、租售比、来源和完整性；没有权威拆分的纯租金、物业费、管理费保持 `null/unknown`，不计算利润。该页面不使用综合风险评分，不写Dashboard，也不会用固定9家历史校准名单替代正常全量扫描。
 
 只读检查 Hanson BI 数据新鲜度与对账：
 

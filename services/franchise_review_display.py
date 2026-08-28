@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from calendar import monthrange
 import json
 from collections import defaultdict
 from pathlib import Path
@@ -15,7 +16,8 @@ from services.franchise_operating_check import (
 )
 
 
-BUSINESS_REVIEW_SCHEMA_VERSION = "franchise-operating-business-review/v0.1"
+BUSINESS_REVIEW_SCHEMA_VERSION = "franchise-operating-business-review/v0.2"
+THREE_MONTH_OPERATING_SCHEMA_VERSION = "franchise-store-three-month-operating/v0.1"
 
 DISPLAY_METRICS = (
     ("revenue", "实际营收", "完整月营收"),
@@ -47,6 +49,179 @@ def _metric_window(rows, field):
         "recent_2m": _round(recent, 2),
         "change": _round(relative_change(recent, baseline)),
     }
+
+
+def _month_end(month):
+    try:
+        year, month_number = (int(part) for part in str(month).split("-"))
+        return f"{year:04d}-{month_number:02d}-{monthrange(year, month_number)[1]:02d}"
+    except (TypeError, ValueError):
+        return None
+
+
+def _month_from_index(value):
+    year, month_zero_based = divmod(value - 1, 12)
+    return f"{year:04d}-{month_zero_based + 1:02d}"
+
+
+def _amount_fact(value, source_field, status=None, reason=None):
+    known = value is not None
+    return {
+        "amount_yuan": _round(value, 2),
+        "status": status or ("known" if known else "unknown"),
+        "source_field": source_field if known else None,
+        "reason": reason,
+    }
+
+
+def _three_month_operating_detail(row):
+    month = row.get("月份")
+    revenue = number(row.get("实际营收"))
+    combined_occupancy_cost = number(row.get("月租金"))
+    rent_ratio = number(row.get("租售比"))
+    has_combined_cost = combined_occupancy_cost is not None
+    split_reason = (
+        "上游仅发布“当前年租金+物业费（月）”合计，无法权威拆分。"
+        if has_combined_cost
+        else "上游未提供可用的租金与物业费合计，无法权威拆分。"
+    )
+    if revenue is None:
+        confidence_status = "insufficient_operating_data"
+    elif has_combined_cost:
+        confidence_status = "operating_known_cost_combined_unallocated"
+    else:
+        confidence_status = "operating_known_cost_unknown"
+    return {
+        "schema_version": THREE_MONTH_OPERATING_SCHEMA_VERSION,
+        "month": month,
+        "operating_revenue": _amount_fact(revenue, "实际营收"),
+        "base_rent": _amount_fact(
+            None,
+            None,
+            status="unknown_unallocated_from_combined_amount" if has_combined_cost else "unknown",
+            reason=split_reason,
+        ),
+        "property_fee": _amount_fact(
+            None,
+            None,
+            status="unknown_unallocated_from_combined_amount" if has_combined_cost else "unknown",
+            reason=split_reason,
+        ),
+        "known_occupancy_cost_total": {
+            "amount_yuan": _round(combined_occupancy_cost, 2),
+            "status": "known_combined_unallocated" if has_combined_cost else "unknown",
+            "included_components": ["base_rent", "property_fee"] if has_combined_cost else [],
+            "excluded_components": ["management_fee", "other_fixed_costs"],
+            "allocation_status": "unallocated" if has_combined_cost else "unknown",
+            "source_field": "月租金" if has_combined_cost else None,
+            "upstream_source_field": "当前年租金+物业费（月）" if has_combined_cost else None,
+        },
+        "management_fee": _amount_fact(
+            None,
+            None,
+            status="unknown",
+            reason="现行经营月表没有正式管理费字段。",
+        ),
+        "other_known_fixed_costs": [],
+        "rent_to_sales_ratio": {
+            "value": _round(rent_ratio),
+            "status": "known" if rent_ratio is not None else "unknown",
+            "source_field": "租售比" if rent_ratio is not None else None,
+            "numerator": "known_occupancy_cost_total",
+            "numerator_scope": "base_rent_plus_property_fee_combined",
+        },
+        "data_cutoff": {
+            "complete_month": month,
+            "cutoff_date": _month_end(month),
+        },
+        "data_source": {
+            "operating_revenue": row.get("营收数据来源") or None,
+            "occupancy_cost": row.get("租金来源文件") or None,
+            "occupancy_cost_note": row.get("租金备注") or None,
+        },
+        "data_quality": {
+            "monthly_gate": "included" if row.get("月度Gate纳入") == "是" else "excluded",
+            "operating_revenue_completeness": row.get("营收数据完整性") or "unknown",
+            "operating_quality_note": row.get("营收质量备注") or None,
+            "occupancy_cost_status": row.get("租金状态") or "unknown",
+            "completeness_status": (
+                "complete_operating_partial_cost_scope"
+                if revenue is not None and has_combined_cost
+                else "complete_operating_cost_unknown"
+                if revenue is not None
+                else "incomplete_operating"
+            ),
+            "confidence_status": confidence_status,
+        },
+    }
+
+
+def validate_three_month_operating_contract(payload, target_month):
+    if payload.get("schema_version") != THREE_MONTH_OPERATING_SCHEMA_VERSION:
+        raise ValueError("近三个月经营契约版本不一致")
+    months = payload.get("months")
+    if not isinstance(months, list) or len(months) != 3:
+        raise ValueError("近三个月经营契约必须恰好包含3个完整自然月")
+    target_index = month_index(target_month)
+    if target_index is None:
+        raise ValueError("近三个月经营契约目标月份非法")
+    expected_months = [_month_from_index(value) for value in range(target_index - 2, target_index + 1)]
+    actual_months = [item.get("month") for item in months]
+    if actual_months != expected_months:
+        raise ValueError("近三个月经营契约必须是截止目标月的连续3个完整自然月")
+    required = {
+        "schema_version",
+        "month",
+        "operating_revenue",
+        "base_rent",
+        "property_fee",
+        "known_occupancy_cost_total",
+        "management_fee",
+        "other_known_fixed_costs",
+        "rent_to_sales_ratio",
+        "data_cutoff",
+        "data_source",
+        "data_quality",
+    }
+    for item in months:
+        missing = sorted(required - set(item))
+        if missing:
+            raise ValueError(f"近三个月经营契约缺少字段：{','.join(missing)}")
+        if item.get("schema_version") != THREE_MONTH_OPERATING_SCHEMA_VERSION:
+            raise ValueError("近三个月经营月记录版本不一致")
+        if item["data_cutoff"].get("complete_month") != item.get("month"):
+            raise ValueError("近三个月经营月记录截止月份不一致")
+        if item["data_cutoff"].get("cutoff_date") != _month_end(item.get("month")):
+            raise ValueError("近三个月经营月记录截止日期不一致")
+        revenue = item["operating_revenue"]
+        expected_revenue_status = "known" if revenue.get("amount_yuan") is not None else "unknown"
+        if revenue.get("status") != expected_revenue_status:
+            raise ValueError("营业额金额与状态不一致")
+        known_total = item["known_occupancy_cost_total"]
+        if known_total.get("status") == "known_combined_unallocated":
+            if known_total.get("amount_yuan") is None:
+                raise ValueError("已知占用成本合计不得为空")
+            if known_total.get("allocation_status") != "unallocated":
+                raise ValueError("合计占用成本必须明确标记未拆分")
+            if item["base_rent"].get("amount_yuan") is not None or item["property_fee"].get("amount_yuan") is not None:
+                raise ValueError("租金与物业费未权威拆分时不得写入候选拆分值")
+        elif known_total.get("amount_yuan") is not None:
+            raise ValueError("未知占用成本不得携带金额")
+        if item["management_fee"].get("amount_yuan") is None and item["management_fee"].get("status") != "unknown":
+            raise ValueError("未知管理费必须保持unknown")
+        ratio = item["rent_to_sales_ratio"]
+        expected_ratio_status = "known" if ratio.get("value") is not None else "unknown"
+        if ratio.get("status") != expected_ratio_status:
+            raise ValueError("租售比数值与状态不一致")
+    return payload
+
+
+def _three_month_operating_contract(rows, target_month):
+    payload = {
+        "schema_version": THREE_MONTH_OPERATING_SCHEMA_VERSION,
+        "months": [_three_month_operating_detail(row) for row in rows[-3:]],
+    }
+    return validate_three_month_operating_contract(payload, target_month)
 
 
 def _threshold(actual, threshold, comparison):
@@ -256,6 +431,7 @@ def _store_observation(store_id, rows, operating_store_result, workforce_rows, t
         "trigger_codes": candidate.get("trigger_codes", []) if candidate else [],
         "candidate_rule_check": paths,
         "latest_month_facts": latest_facts,
+        "recent_three_month_operating": _three_month_operating_contract(rows, target_month),
         "statistical_differences": changes,
         "personnel_history": personnel,
         "possible_explanations": _possible_explanations(changes, personnel),
@@ -368,6 +544,28 @@ def build_business_review(
             "basis": "最近2个完整月平均营收相对此前3个月平均营收的变化率，由下降大到增长排序",
             "note": "这是单项统计差异排序，不是综合风险评分。",
         },
+        "three_month_operating_contract": {
+            "schema_version": THREE_MONTH_OPERATING_SCHEMA_VERSION,
+            "month_count": 3,
+            "window_end_month": target_month,
+            "definition": "目标完整自然月及其前两个完整自然月，按月份升序输出。",
+            "cost_scope": {
+                "known_occupancy_cost_total_source": "经营月表‘月租金’，上游原字段为‘当前年租金+物业费（月）’。",
+                "base_rent_and_property_fee_split_available": False,
+                "management_fee_available": False,
+                "financial_profit_calculated": False,
+                "excluded_components": [
+                    "labor_cost",
+                    "tax",
+                    "utilities",
+                    "consumables",
+                    "marketing",
+                    "maintenance",
+                    "depreciation_and_amortization",
+                    "other_operating_costs",
+                ],
+            },
+        },
         "candidate_count": candidate_count,
         "fixed_nine_comparison": {
             "historical_reference_month": "2026-07",
@@ -451,6 +649,36 @@ def render_business_markdown(review, manifest):
                 reason=store["candidate_rule_check"]["reason"],
             )
         )
+    lines.extend(["", "## 最近3个完整自然月基础经营数据", ""])
+    for store in review["stores"]:
+        lines.extend(
+            [
+                f"### {store['store_name']}（{store['store_id']}）",
+                "",
+                "| 月份 | 营业额 | 已知租金+物业费合计 | 纯租金 | 物业费 | 租售比 | 成本完整性 |",
+                "|---|---:|---:|---:|---:|---:|---|",
+            ]
+        )
+        for month in store["recent_three_month_operating"]["months"]:
+            lines.append(
+                "| {month} | {revenue} | {occupancy} | {base_rent} | {property_fee} | {ratio} | {completeness} |".format(
+                    month=month["month"],
+                    revenue=_num(month["operating_revenue"]["amount_yuan"]),
+                    occupancy=_num(month["known_occupancy_cost_total"]["amount_yuan"]),
+                    base_rent=_num(month["base_rent"]["amount_yuan"]),
+                    property_fee=_num(month["property_fee"]["amount_yuan"]),
+                    ratio=_pct(month["rent_to_sales_ratio"]["value"]),
+                    completeness=month["data_quality"]["completeness_status"],
+                )
+            )
+        lines.extend(
+            [
+                "",
+                "> 成本边界：已知金额仅为上游“当前年租金+物业费（月）”合计，无法拆成纯租金和物业费；"
+                "管理费及其他经营成本未纳入，不计算财务利润。",
+                "",
+            ]
+        )
     lines.extend(
         [
             "",
@@ -506,6 +734,7 @@ def write_business_review_browser(output_root):
                 manifest.get("status") != "ready_for_business_review"
                 or manifest.get("dashboard_write_allowed") is not False
                 or manifest.get("business_review_schema_version") != BUSINESS_REVIEW_SCHEMA_VERSION
+                or manifest.get("three_month_operating_schema_version") != THREE_MONTH_OPERATING_SCHEMA_VERSION
                 or not business_path
                 or not business_path.is_file()
             ):

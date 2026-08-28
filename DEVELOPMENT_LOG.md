@@ -2,6 +2,14 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-08-28 加盟评审近三个月基础经营数据契约
+
+- 类型：只读输出契约 / 成本口径治理 / 向后兼容
+- 内容：在全店 `business_review.json` 中为每家参与门店增加最近3个完整自然月的营业额、已知占用成本合计、租售比、数据截止、来源与质量状态。核实当前“月租金”上游实际为“当前年租金+物业费（月）”合计，因此只写入 `known_occupancy_cost_total`，纯租金、物业费和管理费保持 `null/unknown`，未知成本不写0，不计算或宣称财务利润。业务展示 schema 升级为 v0.2，新增严格 v0.1 子契约和 manifest 版本；既有自动补跑会为旧月份生成新 run，不覆盖旧产物。
+- 改动文件：`services/franchise_review_display.py`、`scripts/build_franchise_operating_review.py`、`ai/schemas/franchise_store_three_month_operating.v0.1.schema.json`、`tests/test_franchise_review_display.py`、`tests/test_franchise_operating_backfill.py`、`README.md`、`docs/FRANCHISE_OPERATING_REVIEW_V0.1.md`、`DEVELOPMENT_LOG.md`
+- commit：见本次聚焦本地提交。
+- 验证方法：近3月窗口、合计成本不猜拆、未知值保持null、schema与manifest版本、旧月份补跑不覆盖专项测试；全量unittest、Python compileall及git diff-check。
+
 ## 2026-08-26 加盟门店业绩差异月度评审展示
 
 - 类型：只读业务展示 / 可解释性 / 测试

@@ -18,6 +18,7 @@ from services.franchise_operating_check import (
 from services.franchise_operating_review import REVIEW_SCHEMA_VERSION, build_review, render_markdown
 from services.franchise_review_display import (
     BUSINESS_REVIEW_SCHEMA_VERSION,
+    THREE_MONTH_OPERATING_SCHEMA_VERSION,
     build_business_review,
     render_business_markdown,
     write_business_review_browser,
@@ -134,6 +135,7 @@ def successful_review_months(output_root: str | Path) -> set[str]:
             and payload.get("status") == "ready_for_business_review"
             and payload.get("dashboard_write_allowed") is False
             and payload.get("business_review_schema_version") == BUSINESS_REVIEW_SCHEMA_VERSION
+            and payload.get("three_month_operating_schema_version") == THREE_MONTH_OPERATING_SCHEMA_VERSION
             and (manifest_path.parent / str((payload.get("outputs") or {}).get("business_review_json") or "")).is_file()
             and month_index(run_month) is not None
         ):
@@ -260,6 +262,7 @@ def build(
         "candidate_rule_version": CANDIDATE_RULE_VERSION,
         "review_schema_version": REVIEW_SCHEMA_VERSION,
         "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
+        "three_month_operating_schema_version": THREE_MONTH_OPERATING_SCHEMA_VERSION,
         "workforce_contract_version": workforce_dataset.get("contract_version"),
         "operating_sha256": sha256_file(operating_path),
         "workforce_sha256": workforce_dataset.get("sha256"),
@@ -292,6 +295,7 @@ def build(
         "candidate_rule_version": CANDIDATE_RULE_VERSION,
         "review_schema_version": REVIEW_SCHEMA_VERSION,
         "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
+        "three_month_operating_schema_version": THREE_MONTH_OPERATING_SCHEMA_VERSION,
         "workforce_contract_version": workforce_dataset.get("contract_version"),
         "inputs": {
             "operating": {"path": str(operating_path), "sha256": identity["operating_sha256"], "row_count": len(monthly_rows)},

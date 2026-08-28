@@ -1,3 +1,4 @@
+import copy
 import csv
 import json
 import tempfile
@@ -9,7 +10,9 @@ from scripts.build_franchise_operating_review import build
 from services.franchise_operating_check import build_operating_check_candidates
 from services.franchise_review_display import (
     BUSINESS_REVIEW_SCHEMA_VERSION,
+    THREE_MONTH_OPERATING_SCHEMA_VERSION,
     build_business_review,
+    validate_three_month_operating_contract,
     write_business_review_browser,
 )
 from services.workforce_monthly import build_workforce_gate, load_workforce_monthly
@@ -24,6 +27,12 @@ def add_display_fields(rows, visits=600, ticket=500, productivity=0.8):
         row["理疗师生产率"] = str(productivity)
         row["营收数据来源"] = "canonical-test"
         row["营收数据完整性"] = "完整月"
+        revenue = float(row["实际营收"])
+        rent_ratio = float(row["租售比"])
+        row["月租金"] = str(revenue * rent_ratio)
+        row["租金状态"] = "当年已定"
+        row["租金来源文件"] = "lease-register-test"
+        row["租金备注"] = "测试租金物业合计"
     return rows
 
 
@@ -125,6 +134,111 @@ class FranchiseReviewDisplayTests(unittest.TestCase):
         self.assertNotIn('"risk_score"', serialized)
         self.assertNotIn("导致", serialized)
 
+    def test_recent_three_month_contract_keeps_combined_cost_without_guessing_split(self):
+        rows = add_display_fields(
+            monthly_rows(
+                revenues=(300000, 300000, 300000, 270000, 250000, 240000),
+                rent_ratios=(0.20, 0.20, 0.20, 0.22, 0.24, 0.25),
+            )
+        )
+        review = self.build_review(rows, workforce_for(("L0001",)))
+        contract = review["stores"][0]["recent_three_month_operating"]
+        validate_three_month_operating_contract(contract, "2026-07")
+        self.assertEqual(contract["schema_version"], THREE_MONTH_OPERATING_SCHEMA_VERSION)
+        self.assertEqual(
+            [row["month"] for row in contract["months"]],
+            ["2026-05", "2026-06", "2026-07"],
+        )
+        july = contract["months"][-1]
+        self.assertEqual(july["operating_revenue"]["amount_yuan"], 240000)
+        self.assertEqual(july["known_occupancy_cost_total"]["amount_yuan"], 60000)
+        self.assertEqual(july["known_occupancy_cost_total"]["status"], "known_combined_unallocated")
+        self.assertEqual(
+            july["known_occupancy_cost_total"]["included_components"],
+            ["base_rent", "property_fee"],
+        )
+        self.assertIsNone(july["base_rent"]["amount_yuan"])
+        self.assertIsNone(july["property_fee"]["amount_yuan"])
+        self.assertEqual(july["base_rent"]["status"], "unknown_unallocated_from_combined_amount")
+        self.assertIsNone(july["management_fee"]["amount_yuan"])
+        self.assertEqual(july["rent_to_sales_ratio"]["value"], 0.25)
+        self.assertEqual(
+            july["rent_to_sales_ratio"]["numerator_scope"],
+            "base_rent_plus_property_fee_combined",
+        )
+        self.assertEqual(july["data_cutoff"]["cutoff_date"], "2026-07-31")
+        self.assertEqual(july["data_source"]["operating_revenue"], "canonical-test")
+        self.assertEqual(july["data_source"]["occupancy_cost"], "lease-register-test")
+        self.assertFalse(
+            review["three_month_operating_contract"]["cost_scope"]["financial_profit_calculated"]
+        )
+        self.assertNotIn('"profit"', json.dumps(contract, ensure_ascii=False))
+
+    def test_recent_three_month_contract_uses_null_not_zero_when_cost_is_unknown(self):
+        rows = add_display_fields(monthly_rows(revenues=(300000,) * 6, rent_ratios=(0.2,) * 6))
+        for row in rows[-3:]:
+            row["月租金"] = ""
+            row["租售比"] = ""
+            row["租金状态"] = "缺租金"
+            row["租金来源文件"] = ""
+        review = self.build_review(rows, workforce_for(("L0001",)))
+        months = review["stores"][0]["recent_three_month_operating"]["months"]
+        for month in months:
+            self.assertIsNone(month["base_rent"]["amount_yuan"])
+            self.assertIsNone(month["property_fee"]["amount_yuan"])
+            self.assertIsNone(month["known_occupancy_cost_total"]["amount_yuan"])
+            self.assertEqual(month["known_occupancy_cost_total"]["status"], "unknown")
+            self.assertIsNone(month["rent_to_sales_ratio"]["value"])
+            self.assertEqual(
+                month["data_quality"]["completeness_status"],
+                "complete_operating_cost_unknown",
+            )
+
+    def test_three_month_schema_file_matches_runtime_contract(self):
+        schema_path = (
+            Path(__file__).resolve().parents[1]
+            / "ai"
+            / "schemas"
+            / "franchise_store_three_month_operating.v0.1.schema.json"
+        )
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        self.assertEqual(
+            schema["properties"]["schema_version"]["const"],
+            THREE_MONTH_OPERATING_SCHEMA_VERSION,
+        )
+        self.assertEqual(schema["properties"]["months"]["minItems"], 3)
+        self.assertEqual(schema["properties"]["months"]["maxItems"], 3)
+        required = set(schema["$defs"]["month_record"]["required"])
+        self.assertTrue(
+            {
+                "month",
+                "operating_revenue",
+                "base_rent",
+                "property_fee",
+                "known_occupancy_cost_total",
+                "rent_to_sales_ratio",
+                "data_cutoff",
+                "data_source",
+                "data_quality",
+            }.issubset(required)
+        )
+
+    def test_three_month_contract_rejects_month_gap_or_guessed_cost_split(self):
+        rows = add_display_fields(monthly_rows(revenues=(300000,) * 6, rent_ratios=(0.2,) * 6))
+        review = self.build_review(rows, workforce_for(("L0001",)))
+        contract = review["stores"][0]["recent_three_month_operating"]
+
+        month_gap = copy.deepcopy(contract)
+        month_gap["months"][0]["month"] = "2026-04"
+        with self.assertRaisesRegex(ValueError, "连续3个完整自然月"):
+            validate_three_month_operating_contract(month_gap, "2026-07")
+
+        guessed_split = copy.deepcopy(contract)
+        guessed_split["months"][-1]["base_rent"]["amount_yuan"] = 30000
+        guessed_split["months"][-1]["base_rent"]["status"] = "known"
+        with self.assertRaisesRegex(ValueError, "不得写入候选拆分值"):
+            validate_three_month_operating_contract(guessed_split, "2026-07")
+
     def test_low_trust_personnel_is_only_auxiliary(self):
         rows = add_display_fields(
             monthly_rows(
@@ -174,6 +288,10 @@ class FranchiseReviewDisplayTests(unittest.TestCase):
             html_text = (output_root / "business_review.html").read_text(encoding="utf-8")
         self.assertFalse(duplicate)
         self.assertEqual(manifest["business_review_schema_version"], BUSINESS_REVIEW_SCHEMA_VERSION)
+        self.assertEqual(
+            manifest["three_month_operating_schema_version"],
+            THREE_MONTH_OPERATING_SCHEMA_VERSION,
+        )
         self.assertEqual(business["candidate_count"], 0)
         self.assertEqual(len(business["stores"]), 1)
         self.assertIn("2026-07", html_text)
@@ -197,6 +315,7 @@ class FranchiseReviewDisplayTests(unittest.TestCase):
                     "status": "ready_for_business_review",
                     "dashboard_write_allowed": False,
                     "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
+                    "three_month_operating_schema_version": THREE_MONTH_OPERATING_SCHEMA_VERSION,
                     "outputs": {"business_review_json": "business_review.json"},
                 }
                 (run_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
@@ -225,6 +344,7 @@ class FranchiseReviewDisplayTests(unittest.TestCase):
                 "status": "ready_for_business_review",
                 "dashboard_write_allowed": False,
                 "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
+                "three_month_operating_schema_version": THREE_MONTH_OPERATING_SCHEMA_VERSION,
                 "outputs": {"business_review_json": "business_review.json"},
             }
             (run_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
@@ -253,6 +373,7 @@ class FranchiseReviewDisplayTests(unittest.TestCase):
                 "status": "ready_for_business_review",
                 "dashboard_write_allowed": False,
                 "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
+                "three_month_operating_schema_version": THREE_MONTH_OPERATING_SCHEMA_VERSION,
                 "outputs": {"business_review_json": "business_review.json"},
             }
             (run_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
