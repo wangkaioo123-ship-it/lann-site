@@ -11,6 +11,8 @@ ANALYSIS_CATALOG_SCHEMA_VERSION = "professional-analysis-catalog/v0.1"
 ANALYSIS_TYPE = "franchise_operating_review"
 CANONICAL_STORE_ID = re.compile(r"^L\d{4}$")
 REQUIRED_INPUT_SOURCES = ("operating", "workforce", "workforce_contract")
+OPTIONAL_INPUT_SOURCES = ("candidate_freeze",)
+ALLOWED_INPUT_SOURCES = REQUIRED_INPUT_SOURCES + OPTIONAL_INPUT_SOURCES
 FINGERPRINT_FIELDS = (
     "source",
     "sha256",
@@ -82,6 +84,8 @@ def normalize_input_identity(identity: dict, require_declared_digest: bool = Fal
         source = fingerprint.get("source")
         if not isinstance(source, str) or not source or source in seen_sources:
             raise ValueError("专业分析输入指纹 source 为空或重复")
+        if source not in ALLOWED_INPUT_SOURCES:
+            raise ValueError(f"专业分析输入来源不支持：{source}")
         seen_sources.add(source)
         sha256 = fingerprint.get("sha256")
         valid_sha256 = isinstance(sha256, str) and bool(
@@ -89,7 +93,7 @@ def normalize_input_identity(identity: dict, require_declared_digest: bool = Fal
         )
         if source in REQUIRED_INPUT_SOURCES and not valid_sha256:
             raise ValueError(f"专业分析输入 {source} 缺少合法 SHA-256")
-        if source not in REQUIRED_INPUT_SOURCES and not (
+        if source in OPTIONAL_INPUT_SOURCES and not (
             valid_sha256 or sha256 == "unavailable"
         ):
             raise ValueError(f"专业分析可选输入 {source} 缺少合法 SHA-256")

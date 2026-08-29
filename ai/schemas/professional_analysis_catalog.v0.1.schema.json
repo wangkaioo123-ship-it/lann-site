@@ -53,7 +53,7 @@
       "additionalProperties": false,
       "required": ["source", "sha256", "data_version", "source_commit", "row_count"],
       "properties": {
-        "source": {"type": "string", "minLength": 1},
+        "source": {"enum": ["operating", "workforce", "workforce_contract", "candidate_freeze"]},
         "sha256": {"type": "string", "pattern": "^([0-9a-f]{64}|unavailable)$"},
         "data_version": {"type": ["string", "null"]},
         "source_commit": {"type": ["string", "null"]},

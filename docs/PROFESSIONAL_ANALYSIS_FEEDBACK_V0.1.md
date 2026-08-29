@@ -30,7 +30,7 @@ Site 是后台专业分析层：只读使用获批数据，输出可解释分析
 - `analysis_id`：由分析类型、源 run、canonical 对象、分析期间、规则版本和规范化完整输入身份摘要稳定生成；
 - `canonical_object`：当前为 canonical `Lxxxx` 门店；
 - `analysis_period`：自然月起止；
-- `input_identity`：源 run、分析管线版本，以及每个必要输入的 `source`、`sha256`、`data_version`、`source_commit` 和行数；`operating`、`workforce`、`workforce_contract` 的 SHA-256 必须是 64 位小写十六进制，不能用缺失值或 `unavailable` 代替。输入按 `source` 规范排序、空值统一为 `null` 后计算 `identity_sha256`。输入顺序变化不改变身份，任何输入内容或版本变化都会生成不同 `analysis_id`；
+- `input_identity`：源 run、分析管线版本，以及每个输入的 `source`、`sha256`、`data_version`、`source_commit` 和行数。来源采用严格白名单：必要来源仅 `operating`、`workforce`、`workforce_contract`，可选来源仅 `candidate_freeze`；任何未知来源均拒绝。三个必要来源的 SHA-256 必须是 64 位小写十六进制，不能用缺失值或 `unavailable` 代替；`candidate_freeze` 可使用合法 SHA-256 或显式 `unavailable`。输入按 `source` 规范排序、空值统一为 `null` 后计算 `identity_sha256`。输入顺序变化不改变身份，任何输入内容或版本变化都会生成不同 `analysis_id`；
 - `rule_version`：本次分析使用的业务规则版本；
 - `confidence`：经营 Gate、人员 Gate 和人员可信等级；
 - `evidence.direct_facts`：原始或正式聚合事实；

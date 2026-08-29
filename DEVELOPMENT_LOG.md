@@ -2,6 +2,14 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-08-29 Site 输入来源白名单 QA 修复
+
+- 类型：QA 阻断修复 / 输入契约白名单
+- 内容：为专业分析输入建立严格来源白名单，必要来源仅 `operating`、`workforce`、`workforce_contract`，可选来源仅 `candidate_freeze`；运行时与 JSON Schema 对任何未知来源一律拒绝，不因 SHA-256 合法或值为 `unavailable` 而放行。`candidate_freeze` 明确支持合法 64 位 SHA-256 或 `unavailable`，前三轮身份重算、输入顺序、必要哈希、失败 stale 分类和反馈边界保持不变。
+- 改动文件：`services/professional_analysis.py`、`ai/schemas/professional_analysis_catalog.v0.1.schema.json`、`tests/test_professional_analysis_feedback.py`、`docs/PROFESSIONAL_ANALYSIS_FEEDBACK_V0.1.md`、`DEVELOPMENT_LOG.md`。
+- commit：见本次追加聚焦提交。
+- 验证方法：未知来源+合法SHA、未知来源+`unavailable` 反例；`candidate_freeze` 合法SHA与`unavailable`正例；专项、全量、Schema、compileall 和 diff-check。
+
 ## 2026-08-29 Site 必要输入 SHA-256 严格校验 QA 修复
 
 - 类型：QA 阻断修复 / 输入身份完整性

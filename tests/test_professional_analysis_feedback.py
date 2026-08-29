@@ -266,21 +266,41 @@ class ProfessionalAnalysisFeedbackTests(unittest.TestCase):
 
         validate_analysis_catalog(copy.deepcopy(self.catalog))
 
-    def test_optional_input_can_explicitly_use_unavailable_sha256(self):
-        optional_manifest = copy.deepcopy(manifest())
-        optional_manifest["inputs"]["candidate_freeze"] = {
-            "sha256": "unavailable",
-            "data_version": None,
-            "source_commit": None,
-            "row_count": None,
-        }
-        catalog = build_analysis_catalog(business_review(), optional_manifest)
-        optional = next(
-            row
-            for row in catalog["records"][0]["input_identity"]["input_fingerprints"]
-            if row["source"] == "candidate_freeze"
-        )
-        self.assertEqual(optional["sha256"], "unavailable")
+    def test_optional_candidate_freeze_accepts_only_its_two_sha_forms(self):
+        for sha256 in ("e" * 64, "unavailable"):
+            with self.subTest(sha256=sha256):
+                optional_manifest = copy.deepcopy(manifest())
+                optional_manifest["inputs"]["candidate_freeze"] = {
+                    "sha256": sha256,
+                    "data_version": None,
+                    "source_commit": None,
+                    "row_count": None,
+                }
+                catalog = build_analysis_catalog(business_review(), optional_manifest)
+                optional = next(
+                    row
+                    for row in catalog["records"][0]["input_identity"][
+                        "input_fingerprints"
+                    ]
+                    if row["source"] == "candidate_freeze"
+                )
+                self.assertEqual(optional["sha256"], sha256)
+
+    def test_unknown_input_source_is_rejected_for_any_sha_form(self):
+        for sha256 in ("e" * 64, "unavailable"):
+            with self.subTest(sha256=sha256):
+                invalid = copy.deepcopy(self.catalog)
+                invalid["records"][0]["input_identity"]["input_fingerprints"].append(
+                    {
+                        "source": "unknown_source",
+                        "sha256": sha256,
+                        "data_version": None,
+                        "source_commit": None,
+                        "row_count": None,
+                    }
+                )
+                with self.assertRaisesRegex(ValueError, "输入来源不支持"):
+                    validate_analysis_catalog(invalid)
 
     def test_no_feedback_and_partial_feedback_keep_unknowns_explicit(self):
         no_feedback = build_calibration_summary(
@@ -570,6 +590,10 @@ class ProfessionalAnalysisFeedbackTests(unittest.TestCase):
             catalog_schema["properties"]["dashboard_write_allowed"]["const"]
         )
         fingerprint_schema = catalog_schema["$defs"]["fingerprint"]
+        self.assertEqual(
+            fingerprint_schema["properties"]["source"]["enum"],
+            ["operating", "workforce", "workforce_contract", "candidate_freeze"],
+        )
         required_sha_rule = fingerprint_schema["allOf"][0]
         self.assertEqual(
             required_sha_rule["if"]["properties"]["source"]["enum"],
