@@ -70,7 +70,7 @@ OCR 合同脚本需要额外安装：
 
 每次成功运行还生成全店只读业务评审。`data/staging/franchise_operating_reviews/business_review.html`可在已成功月份间切换；即使候选数为0，也会按营收直接变化率展示全部参与计算门店、目标月经营/人员事实、现行门槛距离、可能解释与证据缺口。`business_review.json` 同时按 `franchise-store-three-month-operating/v0.1` 输出每店最近3个完整自然月的营业额、已知租金与物业费合计、按两者金额重算的租售比、来源和完整性；上游租售比仅用于一致性诊断，没有权威拆分的纯租金、物业费、管理费保持 `null/unknown`，不计算利润。该页面不使用综合风险评分，不写Dashboard，也不会用固定9家历史校准名单替代正常全量扫描。
 
-同一 run 还生成 `analysis_catalog.json`：按 `professional-analysis-catalog/v0.1` 为每家门店提供稳定 `analysis_id`、canonical 门店、期间、输入指纹、规则版本、可信度、事实/统计差异/代理指标/假设/缺口、结论和建议。Dashboard 后续按 `professional-analysis-feedback/v0.1` 导出人工评审、动作和结果，Site 可生成只读校准质量汇总；详见 `docs/PROFESSIONAL_ANALYSIS_FEEDBACK_V0.1.md`。
+同一 run 还生成 `analysis_catalog.json`：按 `professional-analysis-catalog/v0.1` 为每家门店提供稳定 `analysis_id`、canonical 门店、期间、规范化完整输入指纹、规则版本、可信度、事实/统计差异/代理指标/假设/缺口、结论和建议。`analysis_id` 绑定必要输入的 SHA-256、数据版本和来源提交，输入变化不会沿用旧身份。Dashboard 后续按 `professional-analysis-feedback/v0.1` 导出人工评审、动作和结果，Site 可生成只读校准质量汇总；详见 `docs/PROFESSIONAL_ANALYSIS_FEEDBACK_V0.1.md`。
 
 只读检查 Hanson BI 数据新鲜度与对账：
 

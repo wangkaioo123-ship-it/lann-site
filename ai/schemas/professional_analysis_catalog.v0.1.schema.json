@@ -51,12 +51,12 @@
     "fingerprint": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["source", "sha256", "data_version", "source_version", "row_count"],
+      "required": ["source", "sha256", "data_version", "source_commit", "row_count"],
       "properties": {
         "source": {"type": "string", "minLength": 1},
-        "sha256": {"type": ["string", "null"]},
+        "sha256": {"type": "string", "pattern": "^([0-9a-f]{64}|unavailable)$"},
         "data_version": {"type": ["string", "null"]},
-        "source_version": {"type": ["string", "null"]},
+        "source_commit": {"type": ["string", "null"]},
         "row_count": {"type": ["integer", "null"], "minimum": 0}
       }
     },
@@ -88,10 +88,11 @@
         "input_identity": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["source_run_id", "analysis_pipeline_version", "input_fingerprints"],
+          "required": ["source_run_id", "analysis_pipeline_version", "input_fingerprints", "identity_sha256"],
           "properties": {
             "source_run_id": {"type": "string", "minLength": 1},
             "analysis_pipeline_version": {"type": ["string", "null"]},
+            "identity_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
             "input_fingerprints": {
               "type": "array",
               "items": {"$ref": "#/$defs/fingerprint"}

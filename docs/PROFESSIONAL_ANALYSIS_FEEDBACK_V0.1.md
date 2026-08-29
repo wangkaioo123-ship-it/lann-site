@@ -27,10 +27,10 @@ Site 是后台专业分析层：只读使用获批数据，输出可解释分析
 
 每条记录统一包含：
 
-- `analysis_id`：由分析类型、源 run、canonical 对象、分析期间和规则版本稳定生成；
+- `analysis_id`：由分析类型、源 run、canonical 对象、分析期间、规则版本和规范化完整输入身份摘要稳定生成；
 - `canonical_object`：当前为 canonical `Lxxxx` 门店；
 - `analysis_period`：自然月起止；
-- `input_identity`：源 run、分析管线版本、输入版本和 SHA-256；
+- `input_identity`：源 run、分析管线版本，以及每个必要输入的 `source`、`sha256`、`data_version`、`source_commit` 和行数；输入按 `source` 规范排序、空值统一为 `null` 后计算 `identity_sha256`。输入顺序变化不改变身份，任何输入内容或版本变化都会生成不同 `analysis_id`；
 - `rule_version`：本次分析使用的业务规则版本；
 - `confidence`：经营 Gate、人员 Gate 和人员可信等级；
 - `evidence.direct_facts`：原始或正式聚合事实；
@@ -132,9 +132,9 @@ analysis_calibration/
 
 汇总版本为 `professional-analysis-calibration-summary/v0.1`，包含总分析数、已评审数、各评审类型、存在动作数、已有结果数、未评审清单、动作关联未知清单和缺结果清单。原始分析不会被覆盖，`automatic_rule_change_allowed=false`。
 
-反馈文件读取、版本或身份校验失败时：
+目录、反馈或输出任一阶段失败时：
 
-- `last_attempt.json` 写入 `blocked_by_feedback_input` 和明确原因；
+- `last_attempt.json` 写入 `stale=true`、原始错误类型与原因，并用 `failure_source` 区分 `catalog`、`feedback`、`output`；状态分别为 `blocked_by_analysis_catalog`、`blocked_by_feedback_input`、`blocked_by_output`；
 - `latest_success.json` 与上一份成功汇总保持不变；
 - 不生成新汇总、不修改原始分析、不写 Dashboard。
 

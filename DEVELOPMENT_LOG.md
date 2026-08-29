@@ -2,6 +2,14 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-08-29 Site 专业分析身份绑定与失败状态 QA 修复
+
+- 类型：QA 阻断修复 / 分析身份完整性 / 失败恢复可观测性
+- 内容：将规范化完整输入身份摘要纳入 `analysis_id`，必要输入固定覆盖 source、SHA-256、data_version、source_commit 和行数；目录验证器从记录声明重新规范化并逐项重算身份，输入顺序变化保持同一身份，任一输入内容或版本变化不再沿用旧身份，缺少必要指纹直接拒绝。校准汇总失败状态新增 `stale=true`，按 catalog、feedback、output 分类，同时保留最近成功快照及原始错误类型和原因。
+- 改动文件：`services/professional_analysis.py`、`scripts/build_analysis_calibration_summary.py`、`ai/schemas/professional_analysis_catalog.v0.1.schema.json`、`tests/test_professional_analysis_feedback.py`、`README.md`、`docs/PROFESSIONAL_ANALYSIS_FEEDBACK_V0.1.md`、`docs/FRANCHISE_OPERATING_REVIEW_V0.1.md`、`DEVELOPMENT_LOG.md`。
+- commit：见本次追加聚焦提交。
+- 验证方法：输入 SHA/data_version/source_commit 变化、必要输入缺失、输入顺序无关、catalog/feedback/output 失败分类与最近成功保留专项测试；全量 unittest、JSON Schema 语法、Python compileall 与 git diff-check。
+
 ## 2026-08-29 Site 专业分析共同身份与反馈闭环 V0.1
 
 - 类型：专业分析层收口 / 跨系统只读契约 / 质量校准

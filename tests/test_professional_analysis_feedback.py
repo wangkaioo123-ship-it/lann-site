@@ -4,7 +4,9 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
 
+import scripts.build_analysis_calibration_summary as calibration_script
 from scripts.build_analysis_calibration_summary import build_from_files
 from services.analysis_feedback import (
     CALIBRATION_SCHEMA_VERSION,
@@ -159,6 +161,62 @@ class ProfessionalAnalysisFeedbackTests(unittest.TestCase):
         self.assertEqual(latest["rent_to_sales_ratio"]["value"], 0.2)
         self.assertEqual(latest["source_rent_ratio_diagnostic"], 0.1)
         self.assertFalse(record["dashboard_write_allowed"])
+
+    def test_analysis_id_binds_normalized_complete_input_identity(self):
+        base_catalog = self.catalog
+        base_id = base_catalog["records"][0]["analysis_id"]
+        mutations = (
+            (
+                "sha256",
+                lambda payload: payload["inputs"]["operating"].update(
+                    sha256="e" * 64
+                ),
+            ),
+            (
+                "data_version",
+                lambda payload: payload["inputs"]["workforce"].update(
+                    data_version="store-workforce-monthly/v2"
+                ),
+            ),
+            (
+                "source_commit",
+                lambda payload: payload["inputs"]["workforce"].update(
+                    source_commit="f" * 40
+                ),
+            ),
+        )
+        for label, mutate in mutations:
+            with self.subTest(label=label):
+                changed_manifest = copy.deepcopy(manifest())
+                mutate(changed_manifest)
+                changed = build_analysis_catalog(business_review(), changed_manifest)
+                self.assertNotEqual(changed["records"][0]["analysis_id"], base_id)
+
+        tampered = copy.deepcopy(base_catalog)
+        tampered["records"][0]["input_identity"]["input_fingerprints"][0][
+            "sha256"
+        ] = "e" * 64
+        with self.assertRaisesRegex(ValueError, "输入身份摘要"):
+            validate_analysis_catalog(tampered)
+
+    def test_input_identity_requires_all_sources_but_ignores_source_order(self):
+        missing = copy.deepcopy(self.catalog)
+        missing["records"][0]["input_identity"]["input_fingerprints"] = [
+            row
+            for row in missing["records"][0]["input_identity"]["input_fingerprints"]
+            if row["source"] != "workforce_contract"
+        ]
+        with self.assertRaisesRegex(ValueError, "缺少必要输入指纹"):
+            validate_analysis_catalog(missing)
+
+        reordered = copy.deepcopy(self.catalog)
+        original_ids = [record["analysis_id"] for record in reordered["records"]]
+        for record in reordered["records"]:
+            record["input_identity"]["input_fingerprints"].reverse()
+        validate_analysis_catalog(reordered)
+        self.assertEqual(
+            [record["analysis_id"] for record in reordered["records"]], original_ids
+        )
 
     def test_no_feedback_and_partial_feedback_keep_unknowns_explicit(self):
         no_feedback = build_calibration_summary(
@@ -336,8 +394,91 @@ class ProfessionalAnalysisFeedbackTests(unittest.TestCase):
             )
         self.assertEqual(latest["summary_id"], manifest_payload["summary_id"])
         self.assertEqual(attempt["status"], "blocked_by_feedback_input")
+        self.assertEqual(attempt["failure_source"], "feedback")
+        self.assertTrue(attempt["stale"])
+        self.assertEqual(attempt["error_type"], "JSONDecodeError")
         self.assertEqual(attempt["latest_success"]["summary_id"], latest["summary_id"])
         self.assertFalse(attempt["dashboard_write_allowed"])
+
+    def test_catalog_and_output_failures_are_classified_and_preserve_success(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            catalog_path = root / "analysis_catalog.json"
+            feedback_path = root / "feedback.json"
+            output_root = root / "output"
+            catalog_path.write_text(
+                json.dumps(self.catalog, ensure_ascii=False), encoding="utf-8"
+            )
+            feedback_path.write_text(
+                json.dumps(empty_feedback(), ensure_ascii=False), encoding="utf-8"
+            )
+            successful_manifest, _, _ = build_from_files(
+                catalog_path,
+                feedback_path,
+                output_root,
+                now=datetime(2026, 8, 29, tzinfo=timezone.utc),
+            )
+
+            invalid_catalog = copy.deepcopy(self.catalog)
+            invalid_catalog["records"][0]["input_identity"]["input_fingerprints"][0][
+                "sha256"
+            ] = "e" * 64
+            catalog_path.write_text(
+                json.dumps(invalid_catalog, ensure_ascii=False), encoding="utf-8"
+            )
+            with self.assertRaisesRegex(ValueError, "输入身份摘要"):
+                build_from_files(
+                    catalog_path,
+                    feedback_path,
+                    output_root,
+                    now=datetime(2026, 8, 30, tzinfo=timezone.utc),
+                )
+            catalog_attempt = json.loads(
+                (output_root / "last_attempt.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(catalog_attempt["status"], "blocked_by_analysis_catalog")
+            self.assertEqual(catalog_attempt["failure_source"], "catalog")
+            self.assertTrue(catalog_attempt["stale"])
+            self.assertEqual(
+                catalog_attempt["latest_success"]["summary_id"],
+                successful_manifest["summary_id"],
+            )
+
+            catalog_path.write_text(
+                json.dumps(self.catalog, ensure_ascii=False), encoding="utf-8"
+            )
+            feedback_path.write_text(
+                json.dumps(empty_feedback("export-output-failure"), ensure_ascii=False),
+                encoding="utf-8",
+            )
+            original_write_json = calibration_script._write_json
+
+            def fail_summary_write(path, payload):
+                if Path(path).name == "calibration_summary.json":
+                    raise OSError("simulated output failure")
+                return original_write_json(path, payload)
+
+            with patch.object(
+                calibration_script, "_write_json", side_effect=fail_summary_write
+            ):
+                with self.assertRaisesRegex(OSError, "simulated output failure"):
+                    build_from_files(
+                        catalog_path,
+                        feedback_path,
+                        output_root,
+                        now=datetime(2026, 8, 31, tzinfo=timezone.utc),
+                    )
+            output_attempt = json.loads(
+                (output_root / "last_attempt.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(output_attempt["status"], "blocked_by_output")
+            self.assertEqual(output_attempt["failure_source"], "output")
+            self.assertTrue(output_attempt["stale"])
+            self.assertIn("simulated output failure", output_attempt["reason"])
+            self.assertEqual(
+                output_attempt["latest_success"]["summary_id"],
+                successful_manifest["summary_id"],
+            )
 
     def test_schema_files_publish_exact_versions_and_guardrails(self):
         schema_root = Path(__file__).resolve().parents[1] / "ai" / "schemas"

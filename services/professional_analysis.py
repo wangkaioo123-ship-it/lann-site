@@ -10,6 +10,14 @@ ANALYSIS_RECORD_SCHEMA_VERSION = "professional-analysis-record/v0.1"
 ANALYSIS_CATALOG_SCHEMA_VERSION = "professional-analysis-catalog/v0.1"
 ANALYSIS_TYPE = "franchise_operating_review"
 CANONICAL_STORE_ID = re.compile(r"^L\d{4}$")
+REQUIRED_INPUT_SOURCES = ("operating", "workforce", "workforce_contract")
+FINGERPRINT_FIELDS = (
+    "source",
+    "sha256",
+    "data_version",
+    "source_commit",
+    "row_count",
+)
 
 
 def _stable_id(prefix: str, payload: dict, length: int = 24) -> str:
@@ -20,6 +28,100 @@ def _stable_id(prefix: str, payload: dict, length: int = 24) -> str:
         separators=(",", ":"),
     ).encode("utf-8")
     return f"{prefix}_{hashlib.sha256(raw).hexdigest()[:length]}"
+
+
+def _stable_hash(payload: dict) -> str:
+    raw = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+
+def normalize_input_identity(identity: dict, require_declared_digest: bool = False) -> dict:
+    """Return the deterministic identity used by analysis_id and validate its declaration."""
+    if not isinstance(identity, dict):
+        raise ValueError("专业分析输入身份必须为对象")
+    allowed_identity_keys = {
+        "source_run_id",
+        "analysis_pipeline_version",
+        "input_fingerprints",
+        "identity_sha256",
+    }
+    extra_identity_keys = sorted(set(identity) - allowed_identity_keys)
+    if extra_identity_keys:
+        raise ValueError(
+            f"专业分析输入身份包含未知字段：{','.join(extra_identity_keys)}"
+        )
+    source_run_id = identity.get("source_run_id")
+    if not isinstance(source_run_id, str) or not source_run_id:
+        raise ValueError("专业分析输入身份缺少 source_run_id")
+    analysis_pipeline_version = identity.get("analysis_pipeline_version")
+    if analysis_pipeline_version is not None and not isinstance(
+        analysis_pipeline_version, str
+    ):
+        raise ValueError("专业分析输入身份 analysis_pipeline_version 非法")
+    fingerprints = identity.get("input_fingerprints")
+    if not isinstance(fingerprints, list):
+        raise ValueError("专业分析输入身份 input_fingerprints 必须为数组")
+
+    normalized_fingerprints = []
+    seen_sources = set()
+    required_keys = set(FINGERPRINT_FIELDS)
+    for fingerprint in fingerprints:
+        if not isinstance(fingerprint, dict):
+            raise ValueError("专业分析输入指纹必须为对象")
+        missing_keys = sorted(required_keys - set(fingerprint))
+        extra_keys = sorted(set(fingerprint) - required_keys)
+        if missing_keys:
+            raise ValueError(f"专业分析输入指纹缺少字段：{','.join(missing_keys)}")
+        if extra_keys:
+            raise ValueError(f"专业分析输入指纹包含未知字段：{','.join(extra_keys)}")
+        source = fingerprint.get("source")
+        if not isinstance(source, str) or not source or source in seen_sources:
+            raise ValueError("专业分析输入指纹 source 为空或重复")
+        seen_sources.add(source)
+        sha256 = fingerprint.get("sha256")
+        if not isinstance(sha256, str) or not (
+            sha256 == "unavailable" or re.fullmatch(r"[0-9a-f]{64}", sha256)
+        ):
+            raise ValueError(f"专业分析输入 {source} 缺少合法 SHA-256")
+        data_version = fingerprint.get("data_version")
+        source_commit = fingerprint.get("source_commit")
+        row_count = fingerprint.get("row_count")
+        if data_version is not None and not isinstance(data_version, str):
+            raise ValueError(f"专业分析输入 {source} data_version 非法")
+        if source_commit is not None and not isinstance(source_commit, str):
+            raise ValueError(f"专业分析输入 {source} source_commit 非法")
+        if row_count is not None and (
+            not isinstance(row_count, int) or isinstance(row_count, bool) or row_count < 0
+        ):
+            raise ValueError(f"专业分析输入 {source} row_count 非法")
+        normalized_fingerprints.append(
+            {
+                "source": source,
+                "sha256": sha256,
+                "data_version": data_version or None,
+                "source_commit": source_commit or None,
+                "row_count": row_count,
+            }
+        )
+    missing_sources = sorted(set(REQUIRED_INPUT_SOURCES) - seen_sources)
+    if missing_sources:
+        raise ValueError(f"专业分析缺少必要输入指纹：{','.join(missing_sources)}")
+    normalized_fingerprints.sort(key=lambda row: row["source"])
+    normalized_payload = {
+        "source_run_id": source_run_id,
+        "analysis_pipeline_version": analysis_pipeline_version or None,
+        "input_fingerprints": normalized_fingerprints,
+    }
+    digest = _stable_hash(normalized_payload)
+    declared_digest = identity.get("identity_sha256")
+    if require_declared_digest and declared_digest != digest:
+        raise ValueError("专业分析输入身份摘要与声明内容不一致")
+    return {**normalized_payload, "identity_sha256": digest}
 
 
 def _input_identity(manifest: dict) -> dict:
@@ -34,7 +136,7 @@ def _input_identity(manifest: dict) -> dict:
                 "source": source_name,
                 "sha256": source.get("sha256"),
                 "data_version": source.get("data_version"),
-                "source_version": source.get("source_commit"),
+                "source_commit": source.get("source_commit"),
                 "row_count": source.get("row_count"),
             }
         )
@@ -45,15 +147,17 @@ def _input_identity(manifest: dict) -> dict:
                 "source": "workforce_contract",
                 "sha256": workforce.get("contract_sha256"),
                 "data_version": manifest.get("workforce_contract_version"),
-                "source_version": workforce.get("source_commit"),
+                "source_commit": workforce.get("source_commit"),
                 "row_count": None,
             }
         )
-    return {
-        "source_run_id": manifest.get("run_id"),
-        "analysis_pipeline_version": manifest.get("rule_version"),
-        "input_fingerprints": fingerprints,
-    }
+    return normalize_input_identity(
+        {
+            "source_run_id": manifest.get("run_id"),
+            "analysis_pipeline_version": manifest.get("rule_version"),
+            "input_fingerprints": fingerprints,
+        }
+    )
 
 
 def _personnel_sections(personnel: dict) -> tuple[dict, dict, dict]:
@@ -143,6 +247,7 @@ def _analysis_id_payload(
     canonical_id: str,
     period: dict,
     rule_version: str,
+    input_identity_sha256: str,
 ) -> dict:
     return {
         "analysis_type": analysis_type,
@@ -151,6 +256,7 @@ def _analysis_id_payload(
         "canonical_object_id": canonical_id,
         "period": period,
         "rule_version": rule_version,
+        "input_identity_sha256": input_identity_sha256,
     }
 
 
@@ -173,6 +279,7 @@ def build_analysis_catalog(business_review: dict, manifest: dict) -> dict:
                 store_id,
                 period,
                 rule_version,
+                input_identity["identity_sha256"],
             ),
         )
         personnel_facts, personnel_statistics, personnel_proxies = _personnel_sections(
@@ -292,7 +399,9 @@ def validate_analysis_catalog(payload: dict) -> dict:
         ):
             raise ValueError("加盟经营分析必须对应单一自然月")
         rule_version = record.get("rule_version")
-        input_identity = record.get("input_identity") or {}
+        input_identity = normalize_input_identity(
+            record.get("input_identity"), require_declared_digest=True
+        )
         if not rule_version or input_identity.get("source_run_id") != payload.get("source_run_id"):
             raise ValueError("专业分析记录规则或来源运行身份缺失")
         expected_id = _stable_id(
@@ -304,6 +413,7 @@ def validate_analysis_catalog(payload: dict) -> dict:
                 canonical_id,
                 period,
                 rule_version,
+                input_identity["identity_sha256"],
             ),
         )
         if analysis_id != expected_id:
