@@ -218,6 +218,70 @@ class ProfessionalAnalysisFeedbackTests(unittest.TestCase):
             [record["analysis_id"] for record in reordered["records"]], original_ids
         )
 
+    def test_required_input_sha256_is_strict_in_builder_and_validator(self):
+        manifest_locations = {
+            "operating": ("inputs", "operating", "sha256"),
+            "workforce": ("inputs", "workforce", "sha256"),
+            "workforce_contract": ("inputs", "workforce", "contract_sha256"),
+        }
+        for source, keys in manifest_locations.items():
+            with self.subTest(stage="builder", source=source):
+                invalid_manifest = copy.deepcopy(manifest())
+                target = invalid_manifest
+                for key in keys[:-1]:
+                    target = target[key]
+                target[keys[-1]] = "unavailable"
+                with self.assertRaisesRegex(ValueError, "缺少合法 SHA-256"):
+                    build_analysis_catalog(business_review(), invalid_manifest)
+
+        invalid_values = (None, "", "unavailable", "a" * 63, "A" * 64, "g" * 64)
+        for source in manifest_locations:
+            with self.subTest(stage="validator-missing", source=source):
+                missing = copy.deepcopy(self.catalog)
+                fingerprint = next(
+                    row
+                    for row in missing["records"][0]["input_identity"][
+                        "input_fingerprints"
+                    ]
+                    if row["source"] == source
+                )
+                fingerprint.pop("sha256")
+                with self.assertRaisesRegex(ValueError, "输入指纹缺少字段"):
+                    validate_analysis_catalog(missing)
+            for value in invalid_values:
+                with self.subTest(
+                    stage="validator-invalid", source=source, value=value
+                ):
+                    invalid = copy.deepcopy(self.catalog)
+                    fingerprint = next(
+                        row
+                        for row in invalid["records"][0]["input_identity"][
+                            "input_fingerprints"
+                        ]
+                        if row["source"] == source
+                    )
+                    fingerprint["sha256"] = value
+                    with self.assertRaisesRegex(ValueError, "缺少合法 SHA-256"):
+                        validate_analysis_catalog(invalid)
+
+        validate_analysis_catalog(copy.deepcopy(self.catalog))
+
+    def test_optional_input_can_explicitly_use_unavailable_sha256(self):
+        optional_manifest = copy.deepcopy(manifest())
+        optional_manifest["inputs"]["candidate_freeze"] = {
+            "sha256": "unavailable",
+            "data_version": None,
+            "source_commit": None,
+            "row_count": None,
+        }
+        catalog = build_analysis_catalog(business_review(), optional_manifest)
+        optional = next(
+            row
+            for row in catalog["records"][0]["input_identity"]["input_fingerprints"]
+            if row["source"] == "candidate_freeze"
+        )
+        self.assertEqual(optional["sha256"], "unavailable")
+
     def test_no_feedback_and_partial_feedback_keep_unknowns_explicit(self):
         no_feedback = build_calibration_summary(
             self.catalog,
@@ -504,6 +568,16 @@ class ProfessionalAnalysisFeedbackTests(unittest.TestCase):
         )
         self.assertFalse(
             catalog_schema["properties"]["dashboard_write_allowed"]["const"]
+        )
+        fingerprint_schema = catalog_schema["$defs"]["fingerprint"]
+        required_sha_rule = fingerprint_schema["allOf"][0]
+        self.assertEqual(
+            required_sha_rule["if"]["properties"]["source"]["enum"],
+            ["operating", "workforce", "workforce_contract"],
+        )
+        self.assertEqual(
+            required_sha_rule["then"]["properties"]["sha256"]["pattern"],
+            "^[0-9a-f]{64}$",
         )
         self.assertEqual(
             feedback_schema["properties"]["schema_version"]["const"],

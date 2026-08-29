@@ -84,10 +84,15 @@ def normalize_input_identity(identity: dict, require_declared_digest: bool = Fal
             raise ValueError("专业分析输入指纹 source 为空或重复")
         seen_sources.add(source)
         sha256 = fingerprint.get("sha256")
-        if not isinstance(sha256, str) or not (
-            sha256 == "unavailable" or re.fullmatch(r"[0-9a-f]{64}", sha256)
-        ):
+        valid_sha256 = isinstance(sha256, str) and bool(
+            re.fullmatch(r"[0-9a-f]{64}", sha256)
+        )
+        if source in REQUIRED_INPUT_SOURCES and not valid_sha256:
             raise ValueError(f"专业分析输入 {source} 缺少合法 SHA-256")
+        if source not in REQUIRED_INPUT_SOURCES and not (
+            valid_sha256 or sha256 == "unavailable"
+        ):
+            raise ValueError(f"专业分析可选输入 {source} 缺少合法 SHA-256")
         data_version = fingerprint.get("data_version")
         source_commit = fingerprint.get("source_commit")
         row_count = fingerprint.get("row_count")

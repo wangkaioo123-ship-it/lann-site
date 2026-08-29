@@ -2,6 +2,14 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-08-29 Site 必要输入 SHA-256 严格校验 QA 修复
+
+- 类型：QA 阻断修复 / 输入身份完整性
+- 内容：收紧专业分析必要输入指纹，`operating`、`workforce`、`workforce_contract` 必须提供真实的 64 位小写十六进制 SHA-256；缺失、null、空串、`unavailable`、错误长度、大写和非十六进制均拒绝。可选来源才可在独立分支显式使用 `unavailable`，运行时与 JSON Schema 保持一致；上一轮 ID 重算、输入顺序、失败 stale 分类和反馈边界不变。
+- 改动文件：`services/professional_analysis.py`、`ai/schemas/professional_analysis_catalog.v0.1.schema.json`、`tests/test_professional_analysis_feedback.py`、`docs/PROFESSIONAL_ANALYSIS_FEEDBACK_V0.1.md`、`DEVELOPMENT_LOG.md`。
+- commit：见本次追加聚焦提交。
+- 验证方法：三个必要来源分别覆盖构建期 `unavailable`、校验期缺失/null/空串/`unavailable`/错误长度/大写/非十六进制反例，合法 64 位与可选来源显式 `unavailable` 正例；专项、全量、Schema、compileall 和 diff-check。
+
 ## 2026-08-29 Site 专业分析身份绑定与失败状态 QA 修复
 
 - 类型：QA 阻断修复 / 分析身份完整性 / 失败恢复可观测性

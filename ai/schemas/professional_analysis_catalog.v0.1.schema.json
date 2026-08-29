@@ -58,7 +58,22 @@
         "data_version": {"type": ["string", "null"]},
         "source_commit": {"type": ["string", "null"]},
         "row_count": {"type": ["integer", "null"], "minimum": 0}
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source": {"enum": ["operating", "workforce", "workforce_contract"]}
+            },
+            "required": ["source"]
+          },
+          "then": {
+            "properties": {
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+            }
+          }
+        }
+      ]
     },
     "analysis_record": {
       "type": "object",
