@@ -126,6 +126,7 @@ franchise_operating_reviews/
     ├── review.md
     ├── business_review.json  # 全部参与计算门店的结构化业务评审，含每店近3个完整月基础经营数据
     ├── business_review.md    # 全店差异排序与规则距离
+    ├── analysis_catalog.json # 逐门店专业分析共同身份、证据分层、结论和建议
     └── candidates.csv       # Gate通过时才有
 ```
 
@@ -135,6 +136,8 @@ franchise_operating_reviews/
 - `business_review.html`：无需服务端的只读静态页面，可在2026-06、2026-07及后续成功月份之间切换。
 
 展示版本加入run身份和成功判定。上线后，旧的成功manifest若没有当前`business_review_schema_version`，自动补跑会从最早缺少展示产物的完整月份重新生成一次；同一输入的新展示run仍保持稳定ID与幂等，旧产物不覆盖。
+
+`analysis_catalog.json` 使用 `professional-analysis-catalog/v0.1`，为每家参与门店生成稳定 `analysis_id`，并冻结 canonical 门店、月份、输入文件指纹、规则版本、可信度、事实、统计差异、代理指标、假设、缺口、结论与建议。缺少该目录的旧成功月份也会进入自动补跑，但旧 run 不覆盖。Dashboard 的人工评审、动作和结果通过独立反馈契约返回，不能覆盖原始分析；详见 `docs/PROFESSIONAL_ANALYSIS_FEEDBACK_V0.1.md`。
 
 `run_id` 由运行月份、经营和人员文件 SHA-256、规则版本、固定候选文件摘要及候选顺序共同生成。同一输入重复运行返回 `unchanged`，不创建第二批候选；输入发生变化则保留新的 run 目录，旧版本不被覆盖。
 

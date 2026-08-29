@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lannlife.local/schemas/professional_analysis_catalog.v0.1.schema.json",
+  "title": "LANN Site professional analysis catalog v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "analysis_record_schema_version",
+    "catalog_id",
+    "source_run_id",
+    "analysis_type",
+    "generated_at",
+    "dashboard_write_allowed",
+    "records"
+  ],
+  "properties": {
+    "schema_version": {"const": "professional-analysis-catalog/v0.1"},
+    "analysis_record_schema_version": {"const": "professional-analysis-record/v0.1"},
+    "catalog_id": {"type": "string", "pattern": "^catalog_[0-9a-f]{24}$"},
+    "source_run_id": {"type": "string", "minLength": 1},
+    "analysis_type": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "minLength": 1},
+    "dashboard_write_allowed": {"const": false},
+    "records": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/analysis_record"}
+    }
+  },
+  "$defs": {
+    "canonical_object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_type", "canonical_id", "display_name"],
+      "properties": {
+        "object_type": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "canonical_id": {"type": "string", "minLength": 1},
+        "display_name": {"type": ["string", "null"]}
+      }
+    },
+    "analysis_period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grain", "start", "end"],
+      "properties": {
+        "grain": {"type": "string", "minLength": 1},
+        "start": {"type": "string", "minLength": 1},
+        "end": {"type": "string", "minLength": 1}
+      }
+    },
+    "fingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "sha256", "data_version", "source_version", "row_count"],
+      "properties": {
+        "source": {"type": "string", "minLength": 1},
+        "sha256": {"type": ["string", "null"]},
+        "data_version": {"type": ["string", "null"]},
+        "source_version": {"type": ["string", "null"]},
+        "row_count": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "analysis_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "analysis_id",
+        "analysis_type",
+        "canonical_object",
+        "analysis_period",
+        "input_identity",
+        "rule_version",
+        "confidence",
+        "evidence",
+        "evidence_gaps",
+        "conclusion",
+        "suggestions",
+        "generated_at",
+        "dashboard_write_allowed"
+      ],
+      "properties": {
+        "schema_version": {"const": "professional-analysis-record/v0.1"},
+        "analysis_id": {"type": "string", "pattern": "^ana_[0-9a-f]{24}$"},
+        "analysis_type": {"type": "string", "minLength": 1},
+        "canonical_object": {"$ref": "#/$defs/canonical_object"},
+        "analysis_period": {"$ref": "#/$defs/analysis_period"},
+        "input_identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_run_id", "analysis_pipeline_version", "input_fingerprints"],
+          "properties": {
+            "source_run_id": {"type": "string", "minLength": 1},
+            "analysis_pipeline_version": {"type": ["string", "null"]},
+            "input_fingerprints": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/fingerprint"}
+            }
+          }
+        },
+        "rule_version": {"type": "string", "minLength": 1},
+        "confidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["level", "operating_gate", "workforce_gate", "workforce_data_trust", "note"],
+          "properties": {
+            "level": {"enum": ["medium", "limited", "insufficient"]},
+            "operating_gate": {"enum": ["passed", "not_passed"]},
+            "workforce_gate": {"enum": ["passed", "not_passed"]},
+            "workforce_data_trust": {"type": "string"},
+            "note": {"type": "string"}
+          }
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["direct_facts", "statistical_differences", "proxy_metrics", "hypotheses"],
+          "properties": {
+            "direct_facts": {"type": "object"},
+            "statistical_differences": {"type": "object"},
+            "proxy_metrics": {"type": "object"},
+            "hypotheses": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "evidence_gaps": {"type": "array", "items": {"type": "string"}},
+        "conclusion": {"type": "object"},
+        "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "text"],
+            "properties": {
+              "type": {"type": "string"},
+              "text": {"type": "string"}
+            }
+          }
+        },
+        "generated_at": {"type": "string", "minLength": 1},
+        "dashboard_write_allowed": {"const": false}
+      }
+    }
+  }
+}

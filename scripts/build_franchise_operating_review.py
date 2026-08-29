@@ -16,6 +16,11 @@ from services.franchise_operating_check import (
     month_index,
 )
 from services.franchise_operating_review import REVIEW_SCHEMA_VERSION, build_review, render_markdown
+from services.professional_analysis import (
+    ANALYSIS_CATALOG_SCHEMA_VERSION,
+    ANALYSIS_RECORD_SCHEMA_VERSION,
+    build_analysis_catalog,
+)
 from services.franchise_review_display import (
     BUSINESS_REVIEW_SCHEMA_VERSION,
     THREE_MONTH_OPERATING_SCHEMA_VERSION,
@@ -136,7 +141,10 @@ def successful_review_months(output_root: str | Path) -> set[str]:
             and payload.get("dashboard_write_allowed") is False
             and payload.get("business_review_schema_version") == BUSINESS_REVIEW_SCHEMA_VERSION
             and payload.get("three_month_operating_schema_version") == THREE_MONTH_OPERATING_SCHEMA_VERSION
+            and payload.get("analysis_catalog_schema_version") == ANALYSIS_CATALOG_SCHEMA_VERSION
+            and payload.get("analysis_record_schema_version") == ANALYSIS_RECORD_SCHEMA_VERSION
             and (manifest_path.parent / str((payload.get("outputs") or {}).get("business_review_json") or "")).is_file()
+            and (manifest_path.parent / str((payload.get("outputs") or {}).get("analysis_catalog_json") or "")).is_file()
             and month_index(run_month) is not None
         ):
             successful.add(run_month)
@@ -263,6 +271,8 @@ def build(
         "review_schema_version": REVIEW_SCHEMA_VERSION,
         "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
         "three_month_operating_schema_version": THREE_MONTH_OPERATING_SCHEMA_VERSION,
+        "analysis_catalog_schema_version": ANALYSIS_CATALOG_SCHEMA_VERSION,
+        "analysis_record_schema_version": ANALYSIS_RECORD_SCHEMA_VERSION,
         "workforce_contract_version": workforce_dataset.get("contract_version"),
         "operating_sha256": sha256_file(operating_path),
         "workforce_sha256": workforce_dataset.get("sha256"),
@@ -296,6 +306,8 @@ def build(
         "review_schema_version": REVIEW_SCHEMA_VERSION,
         "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
         "three_month_operating_schema_version": THREE_MONTH_OPERATING_SCHEMA_VERSION,
+        "analysis_catalog_schema_version": ANALYSIS_CATALOG_SCHEMA_VERSION,
+        "analysis_record_schema_version": ANALYSIS_RECORD_SCHEMA_VERSION,
         "workforce_contract_version": workforce_dataset.get("contract_version"),
         "inputs": {
             "operating": {"path": str(operating_path), "sha256": identity["operating_sha256"], "row_count": len(monthly_rows)},
@@ -317,13 +329,16 @@ def build(
             "gate": "data_gate.json", "review_json": "review.json", "review_markdown": "review.md",
             "business_review_json": "business_review.json",
             "business_review_markdown": "business_review.md",
+            "analysis_catalog_json": "analysis_catalog.json",
             "candidate_csv": "candidates.csv" if review["candidates"] else None,
         },
     }
+    analysis_catalog = build_analysis_catalog(business_review, manifest)
     write_json(run_dir / "data_gate.json", review["data_gate"])
     write_json(run_dir / "review.json", review)
     (run_dir / "review.md").write_text(render_markdown(review, manifest), encoding="utf-8")
     write_json(run_dir / "business_review.json", business_review)
+    write_json(run_dir / "analysis_catalog.json", analysis_catalog)
     (run_dir / "business_review.md").write_text(
         render_business_markdown(business_review, manifest), encoding="utf-8"
     )

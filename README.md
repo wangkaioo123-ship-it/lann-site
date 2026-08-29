@@ -1,13 +1,13 @@
 # lann-site
 
-LANN 专业分析与 AI 判断项目。当前主线仍是选址分析：用已开业门店的实际经营结果、租金和选址调研资料建立可解释的历史归因，再用于候选点位初筛。后续可以在同一分析层扩展经营分析、租金压力和投资测算，但不承接业务流程或正式数据写入。
+LANN 后台专业分析服务。Site 只读使用获批数据，当前承载选址、门店经营、人员辅助证据、租金压力和投资测算等可解释分析；Dashboard 保存正式业务事实、人工评审、执行动作与后续结果，Work OS 保存长期规则。Site 不直接修改正式业务状态，也不因单次反馈自动改变规则。
 
 ## 当前运行形态
 
-- Hanson 已在 `/srv/apps/lann-site/repo` 建立独立用户、venv、只读deploy key和只读飞书凭证；飞书底表抽取已验证。
-- 完整经营分析仍待本轮代码push、服务器BI只读凭证确认和systemd timer安装验收。
-- 建议每天北京时间07:30运行，当前输出只保存在服务器本地供 lann-site 消费；详见 `docs/HANSON_SERVER_HANDOFF_V0.1.md`。
-- 经营主链已完成双源接续：王磊月度稿使用至 2026-03，Hanson 日结 `prod_amt` 从 2026-04 接续。当前完整月已更新至 2026-06，滚动趋势统一截止最近全网结算完成日 2026-07-17；详见 `docs/BI_REALTIME_SOURCE_REVIEW_V0.1.md`。
+- 生产目录为 `/srv/apps/lann-site/repo`，使用独立 `app_lann_site` 身份和最小只读权限运行；不开放公网、不写飞书或 Dashboard。
+- 2026-08-29 只读核验确认远端 `master` 与生产 `current_commit` 均为 `1d078d603a1e18d558767bab362b6930b8e258a0`。现役受限入口只能检查版本与部署，不能读取 timer 或业务产物，因此不能把“代码已部署”误报成“2026-06/07 v0.2 业务产物已验收”。
+- 加盟经营评审的正式人员输入来自 lann-data 脱敏 canonical 月度聚合；经营评审消费已准备好的门店月度正式输入。旧 Metabase/BI 直读脚本仅保留为历史诊断与迁移兼容，不是 Dashboard 应依赖的数据契约。
+- 生产安排为北京时间 07:30 自然运行，输出保存在 Site 自身 `data/staging/`。当前最小运维缺口是 Site 结果只读查看/下载能力，不是 lann-data 数据接口。
 
 ## 环境
 
@@ -22,19 +22,13 @@ OCR 合同脚本需要额外安装：
 .\.venv\Scripts\python.exe -m pip install -r requirements-ocr.txt
 ```
 
-复制 `.env.example` 为 `.env`，只填写只读飞书与 BI 凭证。密钥和 `data/` 不进入 Git。
+复制 `.env.example` 为 `.env`。只读飞书和历史诊断脚本所需凭证只保存在运行环境；密钥和 `data/` 不进入 Git。加盟月度评审本身只消费已准备好的正式月表和 canonical 人员聚合，不要求 Dashboard 直连 BI。
 
 ## 标准分析顺序
 
-刷新 Hanson 日结是只读网络操作，先执行：
+当前正式生产顺序是：Data 发布只读正式输入 → Site 执行 Gate → Site 生成只读分析产物。`refresh_hanson_daily_ops`、`export_ops_from_bi` 和旧双源桥接属于历史数据诊断/迁移能力，不再作为跨系统正式消费契约。
 
-```powershell
-.\.venv\Scripts\python.exe -m scripts.refresh_hanson_daily_ops
-```
-
-该命令只输出本地日结聚合、完整月结果、质量问题和30/90天趋势。当天只有部分门店完成结算时，趋势会自动退回最近一个全网结算完成日。
-
-每次更新飞书底表、BI 月表、租金、门店映射或 Hanson 日结后，执行统一重建入口：
+每次更新正式经营月表、租金、门店映射后，可以执行本地分析重建入口：
 
 已确认的换铺/迁址经营期维护在 `config/site_identity_episodes.json`，源表不因分析需要被覆盖。
 
@@ -42,13 +36,13 @@ OCR 合同脚本需要额外安装：
 .\.venv\Scripts\python.exe -m scripts.rebuild_analysis
 ```
 
-服务器完整批处理入口为：
+服务器现有批处理入口为：
 
 ```powershell
 .\.venv\Scripts\python.exe -m scripts.run_server_batch
 ```
 
-该入口先按 `config/ops_source_policy.json` 生成双源月表，再执行身份与数据契约检查；存在 `ERROR` 时停止下游重建。关键本地输出：
+该入口会运行现有资料抽取、历史兼容步骤和下游分析。正式跨系统边界以 lann-data 发布的只读 canonical 输出及本节月度评审输入为准，不能因为仓库仍保留旧 BI 脚本就把旧表当成正式数据契约。存在 `ERROR` 时停止下游重建。关键本地输出：
 
 - `hanson_monthly_prod_amt.csv`：全部门店月及完整性判断。
 - `hanson_monthly_customer_metrics.csv`：门店月级新客、老客、客次、留存与返店频次汇总，不含客户个人数据。
@@ -75,6 +69,8 @@ OCR 合同脚本需要额外安装：
 生产自动任务从2026-06起，每次只处理最早一个尚无成功报告的完整自然月；失败月份保留在队首，后续自动重试，全部追平后恢复最新完整月常规幂等运行。生产默认只读人员出口：`/opt/management-dashboard/data/canonical-snapshot/store_workforce_monthly.csv`，正式契约为 `config/store_workforce_monthly.v1.contract.json`。Site 精确校验 25 列顺序、`data_version` 和生产 commit，并把每次实际文件 SHA-256 写入运行记录；SHA 变化本身不阻断正常月度刷新。Gate 未通过时不生成候选；同一月份、同一输入重复运行不会制造重复候选；不写 Dashboard。首次固定 9 家 2026-07 回放、产物结构和失败提示见 `docs/FRANCHISE_OPERATING_REVIEW_V0.1.md`。
 
 每次成功运行还生成全店只读业务评审。`data/staging/franchise_operating_reviews/business_review.html`可在已成功月份间切换；即使候选数为0，也会按营收直接变化率展示全部参与计算门店、目标月经营/人员事实、现行门槛距离、可能解释与证据缺口。`business_review.json` 同时按 `franchise-store-three-month-operating/v0.1` 输出每店最近3个完整自然月的营业额、已知租金与物业费合计、按两者金额重算的租售比、来源和完整性；上游租售比仅用于一致性诊断，没有权威拆分的纯租金、物业费、管理费保持 `null/unknown`，不计算利润。该页面不使用综合风险评分，不写Dashboard，也不会用固定9家历史校准名单替代正常全量扫描。
+
+同一 run 还生成 `analysis_catalog.json`：按 `professional-analysis-catalog/v0.1` 为每家门店提供稳定 `analysis_id`、canonical 门店、期间、输入指纹、规则版本、可信度、事实/统计差异/代理指标/假设/缺口、结论和建议。Dashboard 后续按 `professional-analysis-feedback/v0.1` 导出人工评审、动作和结果，Site 可生成只读校准质量汇总；详见 `docs/PROFESSIONAL_ANALYSIS_FEEDBACK_V0.1.md`。
 
 只读检查 Hanson BI 数据新鲜度与对账：
 

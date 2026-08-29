@@ -1,10 +1,10 @@
 # lann-site 服务器批处理部署预案
 
-> 状态（2026-07-18）：Hanson 已在 `/srv/apps/lann-site/repo` 完成独立用户、venv、只读deploy key和只读飞书凭证设置，`extract_base` 已成功执行。完整经营分析和timer尚待本轮代码上线验收。
+> 当前状态（2026-08-29）：生产 `current_commit` 与远端 `master` 均为 `1d078d603a1e18d558767bab362b6930b8e258a0`。生产代码部署已经完成；现役受限入口不能读取 timer 和 `data/staging` 结果，因此自然运行产物仍需通过后续 Site 只读结果入口验收，不能继续写成“代码待上线”，也不能反向声称业务产物已验收。
 
 lann-site 不开放公网，只做批处理输出。目标服务器侧只跑“只读数据源 → 清洗/聚合 → 输出本地 staging”这一类无人值守任务。
 
-Hanson BI 日结 `prod_amt` 已在本地主分析链完成接入：完整月更新至 2026-06，滚动趋势截止 2026-07-17。完整服务器交接见 `docs/HANSON_SERVER_HANDOFF_V0.1.md`。
+正式跨系统输入以 lann-data 发布的只读 canonical 聚合及准备好的经营月表为准。仓库中的 Hanson BI/Metabase 直读和双源桥接保留为历史诊断与迁移兼容，不再作为 Dashboard 或其他系统依赖的正式契约。加盟经营评审的当前契约见 `docs/FRANCHISE_OPERATING_REVIEW_V0.1.md`。
 
 ## 环境
 - Python 3.11+（本地用 3.14 验证过；3.11/3.12 均可）
@@ -12,7 +12,7 @@ Hanson BI 日结 `prod_amt` 已在本地主分析链完成接入：完整月更�
   ```
   pip install -r requirements.txt
   ```
-- 凭证：复制 `.env.example` 为 `.env` 并填入（**专用只读飞书 app**，详见该文件注释）。`.env` 已 gitignore，不进库。
+- 凭证：复制 `.env.example` 为 `.env` 并按实际启用的只读能力填写。`.env` 已 gitignore，不进库；月度经营评审只消费已准备的正式月表和 canonical 人员聚合，不要求下游获得 Data 原始凭证。
 
 ## 批处理入口
 ```
@@ -28,14 +28,14 @@ python -m scripts.refresh_hanson_daily_ops
 python -m scripts.rebuild_analysis
 python -m scripts.run_server_batch
 ```
-- 第一条只读 Hanson BI，生成门店级日/月聚合和趋势。
+- 第一条是保留的历史 BI 诊断入口，不是现行跨系统正式数据契约。
 - 第二条不访问网络，使用本地源文件通过质量闸门后重建分析结果。
 - 完整批处理会在重建后自动执行加盟/合资门店经营异常月度核查，读取全部可覆盖门店，结果只写 Site 本地 shadow/staging，不写 Dashboard。
 - 月度核查从2026-06自动补跑，每次只推进最早一个尚无成功报告的完整月。Gate失败时保留失败manifest与`auto_backfill_status.json`并让批处理失败，下一次timer继续重试；全部月份成功后恢复最新完整月常规幂等运行。
 - 成功月份同时生成全店业务评审与`data/staging/franchise_operating_reviews/business_review.html`静态查看页。页面按月切换并在0候选时继续展示全部参与计算门店；它不新增服务、不调用Dashboard，也不改变候选阈值。
 - 展示schema升级后，旧成功月份若缺少当前全店评审产物，会由既有补跑机制按月份重新生成一次；旧run保留，不覆盖。
 - 建议服务器每日在门店全部结算后的低峰时段运行；即使当天只完成部分门店，趋势截止日也不会前移到不完整日。
-- 确认频率：每天北京时间07:30；输出当前只由lann-site本地分析消费，不写飞书或dashboard。
+- 生产安排频率：每天北京时间07:30；输出当前只由lann-site本地分析消费，不写飞书或dashboard。是否已经形成指定月份成功产物必须读取 manifest/Gate 验证，不能仅根据部署版本或调度安排推断。
 
 ## 不在服务器批处理范围（需交互，跑不了无人值守）
 - `extract_focus.py` / `extract_forecasts.py`：读测算云文档，需用户 OAuth（2h 过期、要人工登录）

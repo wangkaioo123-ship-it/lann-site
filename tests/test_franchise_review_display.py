@@ -18,6 +18,11 @@ from services.franchise_review_display import (
     validate_three_month_operating_contract,
     write_business_review_browser,
 )
+from services.professional_analysis import (
+    ANALYSIS_CATALOG_SCHEMA_VERSION,
+    ANALYSIS_RECORD_SCHEMA_VERSION,
+    validate_analysis_catalog,
+)
 from services.workforce_monthly import build_workforce_gate, load_workforce_monthly
 from tests.test_franchise_operating_check import monthly_rows
 from tests.test_franchise_operating_review import HEADERS, workforce_contract, workforce_rows
@@ -366,6 +371,9 @@ class FranchiseReviewDisplayTests(unittest.TestCase):
                 now=datetime(2026, 8, 26, tzinfo=timezone.utc),
             )
             business = json.loads((run_dir / "business_review.json").read_text(encoding="utf-8"))
+            analysis_catalog = json.loads(
+                (run_dir / "analysis_catalog.json").read_text(encoding="utf-8")
+            )
             html_text = (output_root / "business_review.html").read_text(encoding="utf-8")
         self.assertFalse(duplicate)
         self.assertEqual(manifest["business_review_schema_version"], BUSINESS_REVIEW_SCHEMA_VERSION)
@@ -373,6 +381,21 @@ class FranchiseReviewDisplayTests(unittest.TestCase):
             manifest["three_month_operating_schema_version"],
             THREE_MONTH_OPERATING_SCHEMA_VERSION,
         )
+        self.assertEqual(
+            manifest["analysis_catalog_schema_version"],
+            ANALYSIS_CATALOG_SCHEMA_VERSION,
+        )
+        self.assertEqual(
+            manifest["analysis_record_schema_version"],
+            ANALYSIS_RECORD_SCHEMA_VERSION,
+        )
+        validate_analysis_catalog(analysis_catalog)
+        self.assertEqual(len(analysis_catalog["records"]), 1)
+        self.assertEqual(
+            analysis_catalog["records"][0]["canonical_object"]["canonical_id"],
+            "L0001",
+        )
+        self.assertFalse(analysis_catalog["dashboard_write_allowed"])
         self.assertEqual(business["candidate_count"], 0)
         self.assertEqual(len(business["stores"]), 1)
         self.assertIn("2026-07", html_text)

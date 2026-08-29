@@ -2,6 +2,15 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-08-29 Site 专业分析共同身份与反馈闭环 V0.1
+
+- 类型：专业分析层收口 / 跨系统只读契约 / 质量校准
+- 内容：按 Work OS 四层责任为月度加盟经营评审新增逐门店 `analysis_catalog.json`，统一 analysis_id、canonical 对象、期间、输入指纹、规则版本、可信度、事实/统计差异/代理/假设/缺口、结论和建议。新增 Dashboard 拥有的人工反馈导出契约与 Site 校准质量汇总，严格核对 analysis_id、门店、月份和规则版本；相同反馈幂等，冲突反馈拒绝；读取失败保留最近成功汇总。原始分析、人工评审、动作和结果分层保存，单次反馈不能自动修改规则，始终禁止 Dashboard 自动写入。
+- 改动文件：`services/professional_analysis.py`、`services/analysis_feedback.py`、`scripts/build_analysis_calibration_summary.py`、3份专业分析/反馈/汇总 JSON Schema、`tests/test_professional_analysis_feedback.py`、月度评审生成与补跑测试、`README.md`、`AGENTS.md`、相关运行与历史状态说明和本日志。
+- 生产核验：远端 master 与生产 current_commit 均为 `1d078d603a1e18d558767bab362b6930b8e258a0`；受限入口仅开放 status/preflight/deploy，无法读取 timer 或 2026-06/07 v0.2 自然产物，因此未把代码部署误报成真实业务产物验收。
+- commit：见本次聚焦本地提交。
+- 验证方法：共同身份、无/部分反馈、数据缺失、特殊原因、动作/结果、四元身份错配、未知状态、幂等/冲突、失败保留最近成功、旧月份补跑专项测试；全量 unittest、JSON Schema 语法、Python compileall 与 git diff-check。
+
 ## 2026-08-28 近三个月契约租售比金额一致性修复
 
 - 类型：QA阻断修复 / 输出契约校验

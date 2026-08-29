@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lannlife.local/schemas/professional_analysis_calibration_summary.v0.1.schema.json",
+  "title": "LANN Site professional analysis calibration summary v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "summary_id",
+    "status",
+    "generated_at",
+    "dashboard_write_allowed",
+    "source",
+    "counts",
+    "reviewed_records",
+    "unreviewed_analyses",
+    "unknown_action_linkage",
+    "missing_outcomes",
+    "calibration_policy"
+  ],
+  "properties": {
+    "schema_version": {"const": "professional-analysis-calibration-summary/v0.1"},
+    "summary_id": {"type": "string", "pattern": "^cal_[0-9a-f]{24}$"},
+    "status": {"const": "ready"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "dashboard_write_allowed": {"const": false},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["analysis_catalog_id", "analysis_catalog_run_id", "feedback_export_id", "feedback_exported_at", "feedback_source_system"],
+      "properties": {
+        "analysis_catalog_id": {"type": "string", "minLength": 1},
+        "analysis_catalog_run_id": {"type": "string", "minLength": 1},
+        "feedback_export_id": {"type": "string", "minLength": 1},
+        "feedback_exported_at": {"type": "string", "minLength": 1},
+        "feedback_source_system": {"const": "lann-dashboard"}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total_analyses", "reviewed_analyses", "review_statuses", "analyses_with_actions", "analyses_with_outcomes", "idempotent_duplicate_feedback_rows"],
+      "properties": {
+        "total_analyses": {"type": "integer", "minimum": 0},
+        "reviewed_analyses": {"type": "integer", "minimum": 0},
+        "review_statuses": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["accepted", "false_positive", "continue_observation", "data_missing", "known_special_cause"],
+          "properties": {
+            "accepted": {"type": "integer", "minimum": 0},
+            "false_positive": {"type": "integer", "minimum": 0},
+            "continue_observation": {"type": "integer", "minimum": 0},
+            "data_missing": {"type": "integer", "minimum": 0},
+            "known_special_cause": {"type": "integer", "minimum": 0}
+          }
+        },
+        "analyses_with_actions": {"type": "integer", "minimum": 0},
+        "analyses_with_outcomes": {"type": "integer", "minimum": 0},
+        "idempotent_duplicate_feedback_rows": {"type": "integer", "minimum": 0}
+      }
+    },
+    "reviewed_records": {"type": "array", "items": {"$ref": "#/$defs/reviewed_record"}},
+    "unreviewed_analyses": {"type": "array", "items": {"$ref": "#/$defs/reference"}},
+    "unknown_action_linkage": {"type": "array", "items": {"$ref": "#/$defs/reference"}},
+    "missing_outcomes": {"type": "array", "items": {"$ref": "#/$defs/reference"}},
+    "calibration_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["original_analysis_immutable", "automatic_rule_change_allowed", "reason"],
+      "properties": {
+        "original_analysis_immutable": {"const": true},
+        "automatic_rule_change_allowed": {"const": false},
+        "reason": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "$defs": {
+    "canonical_object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_type", "canonical_id", "display_name"],
+      "properties": {
+        "object_type": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "canonical_id": {"type": "string", "minLength": 1},
+        "display_name": {"type": ["string", "null"]}
+      }
+    },
+    "analysis_period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grain", "start", "end"],
+      "properties": {
+        "grain": {"type": "string", "minLength": 1},
+        "start": {"type": "string", "minLength": 1},
+        "end": {"type": "string", "minLength": 1}
+      }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["analysis_id", "canonical_object", "analysis_period", "rule_version"],
+      "properties": {
+        "analysis_id": {"type": "string", "pattern": "^ana_[0-9a-f]{24}$"},
+        "canonical_object": {"$ref": "#/$defs/canonical_object"},
+        "analysis_period": {"$ref": "#/$defs/analysis_period"},
+        "rule_version": {"type": "string"}
+      }
+    },
+    "reviewed_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["analysis_id", "canonical_object", "analysis_period", "rule_version", "feedback_id", "review_status", "action_linkage_status", "outcome_linkage_status"],
+      "properties": {
+        "analysis_id": {"type": "string", "pattern": "^ana_[0-9a-f]{24}$"},
+        "canonical_object": {"$ref": "#/$defs/canonical_object"},
+        "analysis_period": {"$ref": "#/$defs/analysis_period"},
+        "rule_version": {"type": "string"},
+        "feedback_id": {"type": "string", "minLength": 1},
+        "review_status": {"enum": ["accepted", "false_positive", "continue_observation", "data_missing", "known_special_cause"]},
+        "action_linkage_status": {"enum": ["unknown", "present", "confirmed_none"]},
+        "outcome_linkage_status": {"enum": ["unknown", "present"]}
+      }
+    }
+  }
+}
