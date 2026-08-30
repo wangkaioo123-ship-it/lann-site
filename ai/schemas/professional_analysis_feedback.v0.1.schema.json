@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lannlife.local/schemas/professional_analysis_feedback.v0.1.schema.json",
+  "title": "Dashboard-owned professional analysis feedback export v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "export_id", "source_system", "exported_at", "feedbacks"],
+  "properties": {
+    "schema_version": {"const": "professional-analysis-feedback/v0.1"},
+    "export_id": {"type": "string", "minLength": 1},
+    "source_system": {"const": "lann-dashboard"},
+    "exported_at": {"type": "string", "minLength": 1},
+    "feedbacks": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/feedback"}
+    }
+  },
+  "$defs": {
+    "canonical_object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_type", "canonical_id"],
+      "properties": {
+        "object_type": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "canonical_id": {"type": "string", "minLength": 1},
+        "display_name": {"type": ["string", "null"]}
+      }
+    },
+    "analysis_period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grain", "start", "end"],
+      "properties": {
+        "grain": {"type": "string", "minLength": 1},
+        "start": {"type": "string", "minLength": 1},
+        "end": {"type": "string", "minLength": 1}
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_id", "status", "summary", "updated_at"],
+      "properties": {
+        "action_id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["planned", "in_progress", "completed", "cancelled"]},
+        "summary": {"type": "string", "minLength": 1},
+        "updated_at": {"type": "string", "minLength": 1}
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome_id", "status", "summary", "observed_at", "source_reference"],
+      "properties": {
+        "outcome_id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["observed", "not_observed", "inconclusive"]},
+        "summary": {"type": "string", "minLength": 1},
+        "observed_at": {"type": "string", "minLength": 1},
+        "source_reference": {"type": ["string", "null"]}
+      }
+    },
+    "feedback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feedback_id",
+        "analysis_id",
+        "canonical_object",
+        "analysis_period",
+        "rule_version",
+        "review",
+        "actions",
+        "outcome"
+      ],
+      "properties": {
+        "feedback_id": {"type": "string", "minLength": 1},
+        "analysis_id": {"type": "string", "pattern": "^ana_[0-9a-f]{24}$"},
+        "canonical_object": {"$ref": "#/$defs/canonical_object"},
+        "analysis_period": {"$ref": "#/$defs/analysis_period"},
+        "rule_version": {"type": "string", "minLength": 1},
+        "review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "reviewed_at", "reviewer_id", "note", "special_cause"],
+          "properties": {
+            "status": {"enum": ["accepted", "false_positive", "continue_observation", "data_missing", "known_special_cause"]},
+            "reviewed_at": {"type": "string", "minLength": 1},
+            "reviewer_id": {"type": "string", "minLength": 1},
+            "note": {"type": ["string", "null"]},
+            "special_cause": {"type": ["string", "null"]}
+          }
+        },
+        "actions": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "array", "items": {"$ref": "#/$defs/action"}}
+          ]
+        },
+        "outcome": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/outcome"}
+          ]
+        }
+      }
+    }
+  }
+}

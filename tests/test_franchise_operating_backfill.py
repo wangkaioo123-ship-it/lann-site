@@ -10,6 +10,10 @@ from services.franchise_review_display import (
     BUSINESS_REVIEW_SCHEMA_VERSION,
     THREE_MONTH_OPERATING_SCHEMA_VERSION,
 )
+from services.professional_analysis import (
+    ANALYSIS_CATALOG_SCHEMA_VERSION,
+    ANALYSIS_RECORD_SCHEMA_VERSION,
+)
 
 
 def write_manifest(root: Path, month: str, status="ready_for_business_review", dashboard_write_allowed=False):
@@ -23,9 +27,15 @@ def write_manifest(root: Path, month: str, status="ready_for_business_review", d
         "dashboard_write_allowed": dashboard_write_allowed,
         "business_review_schema_version": BUSINESS_REVIEW_SCHEMA_VERSION,
         "three_month_operating_schema_version": THREE_MONTH_OPERATING_SCHEMA_VERSION,
-        "outputs": {"business_review_json": "business_review.json"},
+        "analysis_catalog_schema_version": ANALYSIS_CATALOG_SCHEMA_VERSION,
+        "analysis_record_schema_version": ANALYSIS_RECORD_SCHEMA_VERSION,
+        "outputs": {
+            "business_review_json": "business_review.json",
+            "analysis_catalog_json": "analysis_catalog.json",
+        },
     }
     (run_dir / "business_review.json").write_text("{}", encoding="utf-8")
+    (run_dir / "analysis_catalog.json").write_text("{}", encoding="utf-8")
     (run_dir / "manifest.json").write_text(json.dumps(payload), encoding="utf-8")
     return payload, run_dir
 
@@ -90,6 +100,17 @@ class FranchiseOperatingBackfillTests(unittest.TestCase):
             old_manifest["business_review_schema_version"],
             "franchise-operating-business-review/v0.1",
         )
+
+    def test_success_without_professional_analysis_catalog_is_backfilled(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            payload, run_dir = write_manifest(root, "2026-06")
+            payload.pop("analysis_catalog_schema_version")
+            payload.pop("analysis_record_schema_version")
+            payload["outputs"].pop("analysis_catalog_json")
+            (run_dir / "manifest.json").write_text(json.dumps(payload), encoding="utf-8")
+            plan = plan_auto_backfill(root, today=date(2026, 8, 25))
+        self.assertEqual(plan["selected_month"], "2026-06")
 
     def test_caught_up_run_uses_regular_latest_and_records_duplicate(self):
         with tempfile.TemporaryDirectory() as temp:
