@@ -88,6 +88,14 @@
 
 ---
 
+## 2026-09-02：Site → 阿里云 Dashboard 最小只读导出通道
+
+- 类型：功能 / 数据契约 / 运维边界
+- 内容：确认 lann-data 现役正式出口仅为 Hanson 服务器本地脱敏文件/视图，不存在可供阿里云直接消费的正式 HTTP/API/对象存储接口。新增 Site 独立导出目录与原子发布器，只发布最新成功 run 的 manifest、全店经营评审、专业分析目录、候选评审及可选经营汇总；相同 run 内容变化拒绝覆盖，失败不移动最新成功指针。服务器批处理成功后自动发布，供 Dashboard PR #5 通过无 Shell、无写权限、限定目录的只读 rsync 身份拉取。
+- 改动文件：`services/dashboard_analysis_export.py`、`scripts/publish_dashboard_analysis_export.py`、`ai/schemas/site_dashboard_analysis_export.v0.1.schema.json`、`docs/SITE_DASHBOARD_DATA_CHANNEL_V0.1.md`、`tests/test_dashboard_analysis_export.py`、`scripts/run_server_batch.py`、`README.md`、`docs/server_batch.md`、`DEVELOPMENT_LOG.md`
+- commit：本提交
+- 验证方法：导出专项与批处理顺序测试 8 项通过；全量 unittest 159 项通过；compileall、JSON schema 解析与 `git diff --check` 通过；不连接或修改生产。
+
 ## 2026-08-18 加盟经营异常月度核查与人员证据增强 V0.1
 
 - 类型：功能 / 数据契约 / 测试
