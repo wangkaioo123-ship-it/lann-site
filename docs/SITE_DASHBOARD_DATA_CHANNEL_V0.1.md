@@ -82,4 +82,3 @@ Dashboard PR #5 的 `SITE_ANALYSIS_SOURCE` 应指向上述 `dashboard-v0.1` 根�
 - 相同 run_id 内容变化：两端均拒绝覆盖历史。
 - 回滚 Dashboard 时只切回上一应用 release；mirror 与 Site 不需要反向写入。
 - 回滚 Site 时旧导出仍是只读不可变快照；恢复服务后再次运行发布命令即可。
-
