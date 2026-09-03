@@ -2,6 +2,14 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-09-02 阿里云远程只读数据包与加盟经营评审入口
+
+- 类型：架构/数据契约/部署
+- 内容：新增 Data → Site HTTPS 只读版本包契约、原子下载与 SHA-256 校验、最近成功包回退、远程加盟经营评审入口，以及适配 2 核 2G 阿里云服务器的 systemd oneshot/timer 和资源上限。正式远程入口不执行仓库遗留的旧 BI 直连批处理；拒绝下载重定向，跨域文件不携带数据出口 Bearer Token；同 ID 冲突、内容校验失败和回滚信号硬失败，网络回退明确标记陈旧。
+- 改动文件：`services/remote_data_package.py`、`scripts/run_remote_franchise_review.py`、`tests/test_remote_data_package.py`、`tests/test_remote_franchise_review.py`、`docs/REMOTE_DATA_PACKAGE_V1.md`、`deploy/*`、`README.md`、`DECISIONS.md`、`DEVELOPMENT_LOG.md`
+- commit：未提交
+- 验证方法：新增专项 16 项通过，覆盖只读下载、原子落盘、回滚/冲突/重定向拒绝、陈旧数据标记及 401/404 硬失败；全量 168 项 unittest、`compileall` 与 `git diff --check` 通过。Kimi 第一轮提出的凭证重定向、完整性降级和旧定时冲突阻断项均已修复；第二轮确认 Blocker/High 清零，并按复验意见将 HTTP 4xx 收紧为不可回退错误。
+
 ## 2026-08-29 Site 输入来源白名单 QA 修复
 
 - 类型：QA 阻断修复 / 输入契约白名单

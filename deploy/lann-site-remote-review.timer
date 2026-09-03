@@ -1,0 +1,12 @@
+[Unit]
+Description=Run LANN Site remote review after daily Data publication
+Conflicts=lann-site-refresh.timer lann-site-refresh.service
+
+[Timer]
+OnCalendar=*-*-* 08:10:00 Asia/Shanghai
+RandomizedDelaySec=300
+Persistent=true
+Unit=lann-site-remote-review.service
+
+[Install]
+WantedBy=timers.target
