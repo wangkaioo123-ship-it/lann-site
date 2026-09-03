@@ -1,0 +1,34 @@
+[Unit]
+Description=LANN Site remote monthly operating review
+Wants=network-online.target
+After=network-online.target
+Conflicts=lann-site-refresh.service lann-site-refresh.timer
+
+[Service]
+Type=oneshot
+User=app_lann_site
+Group=app_lann_site
+WorkingDirectory=/srv/apps/lann-site/current
+EnvironmentFile=/etc/lann-site/remote-review.env
+ExecStart=/srv/apps/lann-site/venv/bin/python -m scripts.run_remote_franchise_review
+TimeoutStartSec=20min
+UMask=0027
+Nice=10
+CPUQuota=100%
+MemoryHigh=750M
+MemoryMax=900M
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectHome=true
+ProtectSystem=strict
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+RestrictRealtime=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadOnlyPaths=/srv/apps/lann-site/current
+ReadWritePaths=/var/lib/lann-site

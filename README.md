@@ -9,6 +9,12 @@ LANN 后台专业分析服务。Site 只读使用获批数据，当前承载选�
 - 加盟经营评审的正式人员输入来自 lann-data 脱敏 canonical 月度聚合；经营评审消费已准备好的门店月度正式输入。旧 Metabase/BI 直读脚本仅保留为历史诊断与迁移兼容，不是 Dashboard 应依赖的数据契约。
 - 生产安排为北京时间 07:30 自然运行，输出保存在 Site 自身 `data/staging/`。当前最小运维缺口是 Site 结果只读查看/下载能力，不是 lann-data 数据接口。
 
+## 阿里云独立运行
+
+Dashboard 与 Site 回迁 LANN 阿里云后，Site 不再读取 Hanson 服务器本地目录，也不通过 VPN、SSH 或远程执行取数。Data 按 `docs/REMOTE_DATA_PACKAGE_V1.md` 发布 HTTPS 只读版本包；Site 使用 `scripts.run_remote_franchise_review` 下载、校验、缓存并运行加盟经营评审。远端失败时保留最近成功包并明确标记数据未更新，不回写 Data。
+
+阿里云定时单元位于 `deploy/lann-site-remote-review.service` 与 `deploy/lann-site-remote-review.timer`。该入口只运行正式远程月度评审，不执行 `run_server_batch` 中遗留的旧 BI 直连兼容步骤。
+
 ## 环境
 
 ```powershell
