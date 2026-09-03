@@ -1,5 +1,7 @@
 # Site → 阿里云 Dashboard 只读数据通道 V0.1
 
+> 状态：已被 V0.2 替代。V0.1 记录 Site 留在 Hanson 主机时的跨机 rsync 方案；当前 Site 与 Dashboard 已决定同迁 LANN 阿里云，正式方案见 `SITE_DASHBOARD_DATA_CHANNEL_V0.2.md`。
+
 ## 结论
 
 当前 lann-data 正式出口是 Hanson 服务器本地的脱敏 canonical 文件/视图，只对同机 `app_lann_site` 开放；仓库与生产说明中没有可供阿里云访问的正式 HTTP API、下载接口或对象存储出口。服务器本地文件可读不等于存在网络接口。

@@ -2,6 +2,13 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-09-03 阿里云 Data → Site → Dashboard 完整链路整合
+
+- 类型：迁移整合/只读发布
+- 内容：合并远程 Data HTTPS 包与既有 Dashboard 最小快照导出。Site 每次远程经营评审 Gate 通过后，自动将同一 run 原子发布到 `/var/lib/lann-site/output/dashboard-v0.1`；发布失败不把本轮标记为成功。Dashboard 只通过同机共享只读组消费该快照，不再需要 Hanson 主机 SSH 导出身份、阿里云私钥或跨机 rsync。
+- 业务边界：Data、Site、Dashboard 继续保持唯一事实源和最小权限；本轮不修改分析规则、业务字段或正式数据。
+- 独立审查修正：统一阿里云 release/venv 布局并补齐系统身份、目录和 token 权限；Data 回退状态随只读指针传给 Dashboard；TLS 失败不回退，下载错误脱敏；评审 JSON 改为原子写入。
+
 ## 2026-09-02 阿里云远程只读数据包与加盟经营评审入口
 
 - 类型：架构/数据契约/部署

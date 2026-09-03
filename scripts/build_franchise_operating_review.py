@@ -6,6 +6,8 @@ import argparse
 import csv
 import hashlib
 import json
+import os
+import tempfile
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -102,7 +104,19 @@ def stable_run_id(payload: dict) -> str:
 
 
 def write_json(path: Path, payload: dict):
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    content = (json.dumps(payload, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    try:
+        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f".{path.name}.", delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary and temporary.exists():
+            temporary.unlink()
 
 
 def month_from_index(value: int) -> str:

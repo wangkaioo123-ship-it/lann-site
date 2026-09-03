@@ -37,6 +37,7 @@ RUN_FILE_KEYS = {
 }
 MONTH_PATTERN = re.compile(r"^20\d{2}-(0[1-9]|1[0-2])$")
 RUN_ID_PATTERN = re.compile(r"^[0-9a-f]{8,64}$")
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 class DashboardAnalysisExportError(ValueError):
@@ -127,6 +128,43 @@ def _require_read_only_ready(payload: dict, label: str, run_month: str) -> None:
         raise DashboardAnalysisExportError(f"{label}月份与最新成功指针不一致")
 
 
+def _normalize_source_data(source_data: dict | None) -> dict | None:
+    if source_data is None:
+        return None
+    if not isinstance(source_data, dict):
+        raise DashboardAnalysisExportError("Data 来源状态必须为对象")
+    sync_status = source_data.get("sync_status")
+    if sync_status not in {"fresh", "fallback_last_success"}:
+        raise DashboardAnalysisExportError("Data 来源状态非法")
+    stale = source_data.get("stale")
+    if not isinstance(stale, bool) or stale != (sync_status == "fallback_last_success"):
+        raise DashboardAnalysisExportError("Data 新鲜度与同步状态不一致")
+    data_period = str(source_data.get("data_period") or "")
+    if not MONTH_PATTERN.fullmatch(data_period):
+        raise DashboardAnalysisExportError("Data 数据期间格式非法")
+    generated_at = str(source_data.get("generated_at") or "")
+    try:
+        parsed_generated_at = datetime.fromisoformat(generated_at.replace("Z", "+00:00"))
+    except ValueError as error:
+        raise DashboardAnalysisExportError("Data 生成时间格式非法") from error
+    if parsed_generated_at.tzinfo is None:
+        raise DashboardAnalysisExportError("Data 生成时间必须包含时区")
+    package_id = str(source_data.get("package_id") or "")
+    if not package_id or "/" in package_id or "\\" in package_id:
+        raise DashboardAnalysisExportError("Data package_id 非法")
+    manifest_sha256 = str(source_data.get("manifest_sha256") or "")
+    if not SHA256_PATTERN.fullmatch(manifest_sha256):
+        raise DashboardAnalysisExportError("Data manifest SHA-256 非法")
+    return {
+        "sync_status": sync_status,
+        "stale": stale,
+        "package_id": package_id,
+        "data_period": data_period,
+        "generated_at": generated_at,
+        "manifest_sha256": manifest_sha256,
+    }
+
+
 def validate_source_bundle(source_root: str | Path) -> dict:
     """Validate and return the exact allowlisted files for the current successful run."""
     source_root = Path(source_root)
@@ -205,6 +243,7 @@ def publish_dashboard_analysis_export(
     source_root: str | Path = DEFAULT_SOURCE_ROOT,
     export_root: str | Path = DEFAULT_EXPORT_ROOT,
     summary_path: str | Path | None = DEFAULT_SUMMARY_PATH,
+    source_data: dict | None = None,
     now: datetime | None = None,
 ) -> dict:
     """Publish a minimal pull-only bundle without exposing staging or the repository."""
@@ -218,6 +257,7 @@ def publish_dashboard_analysis_export(
         raise DashboardAnalysisExportError("导出目录与源经营评审目录不得互相包含")
 
     bundle = validate_source_bundle(source_root)
+    normalized_source_data = _normalize_source_data(source_data)
     review_export_root = export_root / "franchise_operating_reviews"
     run_export_root = review_export_root / bundle["run_month"] / bundle["run_id"]
     exported_files = []
@@ -259,6 +299,8 @@ def publish_dashboard_analysis_export(
         "status": "ready_for_business_review",
         "dashboard_write_allowed": False,
     }
+    if normalized_source_data:
+        pointer["source_data"] = normalized_source_data
     pointer_bytes = (json.dumps(pointer, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     pointer_path = review_export_root / "latest_success.json"
     export_manifest = {
@@ -282,6 +324,8 @@ def publish_dashboard_analysis_export(
         "latest_success_sha256": hashlib.sha256(pointer_bytes).hexdigest(),
         "dashboard_write_allowed": False,
     }
+    if normalized_source_data:
+        export_manifest["source_data"] = normalized_source_data
     _atomic_json(review_export_root / "export_manifest.json", export_manifest)
     _atomic_bytes(pointer_path, pointer_bytes)
     return export_manifest

@@ -2,6 +2,7 @@ import tempfile
 import unittest
 import hashlib
 import json
+import requests
 from pathlib import Path
 from unittest.mock import patch
 
@@ -126,6 +127,18 @@ class RemoteFranchiseReviewTests(unittest.TestCase):
                     sync_function=fail_sync,
                 )
 
+    def test_tls_error_does_not_fallback(self):
+        with tempfile.TemporaryDirectory() as temp:
+            def fail_sync(*args, **kwargs):
+                raise requests.exceptions.SSLError("certificate verify failed")
+
+            with self.assertRaisesRegex(Exception, "TLS 校验失败"):
+                acquire_package(
+                    "https://data.example.test/manifest.json",
+                    temp,
+                    sync_function=fail_sync,
+                )
+
     def test_execute_marks_network_fallback_as_stale_success(self):
         with tempfile.TemporaryDirectory() as temp:
             input_root = Path(temp) / "input"
@@ -158,13 +171,30 @@ class RemoteFranchiseReviewTests(unittest.TestCase):
                 "scripts.run_remote_franchise_review.build",
                 return_value=(manifest, output_root / "2026-07" / "ready-run", False),
             ):
+                captured = {}
+                published = {
+                    "schema_version": "site-dashboard-analysis-export/v0.1",
+                    "source_run": {"run_month": "2026-07", "run_id": "ready-run"},
+                    "source_data": {"stale": True},
+                    "dashboard_write_allowed": False,
+                }
+                def publish(**kwargs):
+                    captured.update(kwargs)
+                    return published
                 result = execute(
                     "https://data.example.test/manifest.json",
                     input_root=input_root,
                     output_root=output_root,
+                    dashboard_export_root=Path(temp) / "dashboard-export",
                     target_month="2026-07",
+                    publish_function=publish,
                 )
             self.assertEqual(result["status"], "success_stale_data")
+            self.assertEqual(result["dashboard_export"]["run_id"], "ready-run")
+            self.assertTrue(result["dashboard_export"]["stale"])
+            self.assertFalse(result["dashboard_export"]["dashboard_write_allowed"])
+            self.assertEqual(captured["source_data"]["sync_status"], "fallback_last_success")
+            self.assertTrue(captured["source_data"]["stale"])
             saved = json.loads((output_root / "remote_run_status.json").read_text(encoding="utf-8"))
             self.assertEqual(saved["sync_status"], "fallback_last_success")
             self.assertEqual(saved["status"], "success_stale_data")

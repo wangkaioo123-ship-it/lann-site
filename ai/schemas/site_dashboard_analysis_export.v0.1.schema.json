@@ -86,6 +86,19 @@
       ]
     },
     "latest_success_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "source_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sync_status", "stale", "package_id", "data_period", "generated_at", "manifest_sha256"],
+      "properties": {
+        "sync_status": { "enum": ["fresh", "fallback_last_success"] },
+        "stale": { "type": "boolean" },
+        "package_id": { "type": "string", "minLength": 1 },
+        "data_period": { "type": "string", "pattern": "^20[0-9]{2}-(0[1-9]|1[0-2])$" },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
     "dashboard_write_allowed": { "const": false }
   }
 }

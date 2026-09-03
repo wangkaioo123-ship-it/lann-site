@@ -78,7 +78,7 @@ OCR 合同脚本需要额外安装：
 
 同一 run 还生成 `analysis_catalog.json`：按 `professional-analysis-catalog/v0.1` 为每家门店提供稳定 `analysis_id`、canonical 门店、期间、规范化完整输入指纹、规则版本、可信度、事实/统计差异/代理指标/假设/缺口、结论和建议。`analysis_id` 绑定必要输入的 SHA-256、数据版本和来源提交，输入变化不会沿用旧身份。Dashboard 后续按 `professional-analysis-feedback/v0.1` 导出人工评审、动作和结果，Site 可生成只读校准质量汇总；详见 `docs/PROFESSIONAL_ANALYSIS_FEEDBACK_V0.1.md`。
 
-成功运行最后会将当前可消费的最小 bundle 原子发布到 `data/exports/dashboard-v0.1`，供异机 Dashboard 通过独立受限身份只读拉取。该目录不包含 lann-data 原始文件、Site 仓库或其他 staging 数据；通道契约、三种方案比较和一次性权限边界见 `docs/SITE_DASHBOARD_DATA_CHANNEL_V0.1.md`。
+成功运行最后会将当前可消费的最小 bundle 原子发布到 `/var/lib/lann-site/output/dashboard-v0.1`，供同机 Dashboard 通过 `lann_site_readers` 只读组同步到自身镜像。该目录不包含 lann-data 原始文件、Site 仓库或其他 staging 数据；当前通道契约见 `docs/SITE_DASHBOARD_DATA_CHANNEL_V0.2.md`。
 
 只读检查 Hanson BI 数据新鲜度与对账：
 

@@ -52,12 +52,29 @@ V1 的发布信任锚是受控 HTTPS 地址及只读 Token，SHA-256 用于核�
 阿里云只启用 `lann-site-remote-review.timer`。安装前必须执行：
 
 ```bash
+sudo groupadd --system lann_site_readers 2>/dev/null || true
+id app_lann_site >/dev/null 2>&1 || sudo useradd --system --home /var/lib/lann-site --shell /usr/sbin/nologin app_lann_site
+sudo usermod -aG lann_site_readers app_lann_site
+sudo install -d -o root -g root -m 0755 /srv/lann-site/releases
+sudo install -d -o root -g root -m 0755 /srv/lann-site/venv
+sudo install -d -o root -g root -m 0750 /etc/lann-site
+sudo install -d -o app_lann_site -g app_lann_site -m 0750 /var/lib/lann-site/remote-data
+sudo install -d -o app_lann_site -g lann_site_readers -m 2750 /var/lib/lann-site/output
+sudo chown root:app_lann_site /etc/lann-site/remote-review.env /etc/lann-site/data-package.token
+sudo chmod 0640 /etc/lann-site/remote-review.env /etc/lann-site/data-package.token
+```
+
+代码发布到 `/srv/lann-site/releases/<commit>`，`/srv/lann-site/current` 只指向通过验收的 release；独立 venv 固定在 `/srv/lann-site/venv`。Site 导出目录及新建子目录必须保持 `app_lann_site:lann_site_readers` 和 setgid，Dashboard 账号只加入 `lann_site_readers`，不得加入 `app_lann_site` 主组。
+
+```bash
 systemctl disable --now lann-site-refresh.timer lann-site-refresh.service 2>/dev/null || true
 systemctl mask lann-site-refresh.timer lann-site-refresh.service
 systemctl is-enabled lann-site-refresh.timer
 ```
 
 最后一条必须返回 `masked`。旧 `lann-site-refresh` 会运行含 BI/飞书直连的兼容批处理，不得与远程版本包入口并存。启用新 timer 前使用 `systemd-analyze verify` 与 `systemd-analyze calendar '*-*-* 08:10:00 Asia/Shanghai'` 在目标机核验。
+
+每次数据 Gate 通过后，同一任务还会原子发布 `/var/lib/lann-site/output/dashboard-v0.1`。指针同时携带 Data 包期间、生成时间、包 ID、manifest SHA 和 `stale` 状态，使 Dashboard 能明确显示旧数据。只有 Dashboard 使用的最小只读分析产物进入该目录；Data 输入包仍留在 Site 私有目录，不向 Dashboard 暴露。
 
 ## 运行入口
 
@@ -71,3 +88,4 @@ python -m scripts.run_remote_franchise_review
 - `LANN_DATA_PACKAGE_TOKEN_FILE`
 - `LANN_SITE_REMOTE_INPUT_ROOT`
 - `LANN_FRANCHISE_OPERATING_REVIEW_ROOT`
+- `LANN_SITE_DASHBOARD_EXPORT_ROOT`

@@ -134,6 +134,31 @@ class DashboardAnalysisExportTests(unittest.TestCase):
             self.assertEqual(len(manifest["files"]), 4)
             self.assertTrue(all(len(item["sha256"]) == 64 for item in manifest["files"]))
 
+    def test_preserves_remote_data_freshness_for_dashboard(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, summary = valid_source(root)
+            export = root / "export"
+            source_data = {
+                "sync_status": "fallback_last_success",
+                "stale": True,
+                "package_id": "2026-07-retry",
+                "data_period": "2026-07",
+                "generated_at": "2026-09-01T08:00:00+08:00",
+                "manifest_sha256": "f" * 64,
+            }
+            manifest = publish_dashboard_analysis_export(
+                source,
+                export,
+                summary,
+                source_data=source_data,
+            )
+            pointer = json.loads(
+                (export / "franchise_operating_reviews" / "latest_success.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(manifest["source_data"], source_data)
+            self.assertEqual(pointer["source_data"], source_data)
+
     def test_rejects_write_enabled_bundle_and_preserves_previous_pointer(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
