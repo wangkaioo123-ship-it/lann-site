@@ -27,6 +27,7 @@ SOURCE_COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 DEFAULT_MAX_FILE_BYTES = 20 * 1024 * 1024
 DEFAULT_MAX_MANIFEST_BYTES = 1024 * 1024
 DEFAULT_TIMEOUT = (10, 60)
+MONTH_PATTERN = re.compile(r"^20\d{2}-(0[1-9]|1[0-2])$")
 
 
 class RemoteDataPackageError(RuntimeError):
@@ -120,6 +121,13 @@ def parse_generated_at(value: str) -> datetime:
     return generated_datetime
 
 
+def parse_data_period(value: str) -> tuple[int, int]:
+    if not isinstance(value, str) or not MONTH_PATTERN.fullmatch(value):
+        raise RemoteDataPackageError("数据包 data_period 必须是 YYYY-MM")
+    year, month = value.split("-")
+    return int(year), int(month)
+
+
 def ensure_not_rollback(root: Path, manifest: dict) -> None:
     pointer_path = root / "latest_success.json"
     if not pointer_path.is_file():
@@ -132,9 +140,14 @@ def ensure_not_rollback(root: Path, manifest: dict) -> None:
         raise PackageIntegrityError("最近成功数据包指针版本不受支持，无法校验回滚")
     previous_period = str(pointer.get("data_period") or "")
     previous_generated_at = str(pointer.get("generated_at") or "")
-    if not re.fullmatch(r"\d{4}-\d{2}", previous_period) or not previous_generated_at:
+    if not previous_generated_at:
         raise PackageIntegrityError("最近成功数据包缺少回滚校验字段")
-    if manifest["data_period"] < previous_period:
+    try:
+        previous_period_value = parse_data_period(previous_period)
+        current_period_value = parse_data_period(manifest["data_period"])
+    except RemoteDataPackageError as error:
+        raise PackageIntegrityError("最近成功数据包月份无法用于回滚校验") from error
+    if current_period_value < previous_period_value:
         raise PackageIntegrityError("远端数据包月份早于最近成功包，已拒绝回滚")
     if parse_generated_at(manifest["generated_at"]) < parse_generated_at(previous_generated_at):
         raise PackageIntegrityError("远端数据包生成时间早于最近成功包，已拒绝回滚")
@@ -154,10 +167,7 @@ def validate_manifest(payload: dict, manifest_url: str, allow_insecure: bool = F
     generated_at = str(payload.get("generated_at") or "")
     parse_generated_at(generated_at)
     data_period = str(payload.get("data_period") or "")
-    try:
-        datetime.strptime(data_period, "%Y-%m")
-    except ValueError as error:
-        raise RemoteDataPackageError("数据包 data_period 必须是 YYYY-MM")
+    parse_data_period(data_period)
     files = payload.get("files")
     if not isinstance(files, list):
         raise RemoteDataPackageError("数据包 files 必须是数组")
@@ -172,7 +182,7 @@ def validate_manifest(payload: dict, manifest_url: str, allow_insecure: bool = F
             raise RemoteDataPackageError(f"数据包角色重复：{role}")
         file_url = urljoin(manifest_url, str(item.get("url") or ""))
         validate_transport(file_url, allow_insecure)
-        expected_sha256 = str(item.get("sha256") or "").lower()
+        expected_sha256 = str(item.get("sha256") or "")
         if not SHA256_PATTERN.fullmatch(expected_sha256):
             raise RemoteDataPackageError(f"{role} 的 sha256 非法")
         size_bytes = item.get("size_bytes")
@@ -358,7 +368,8 @@ def sync_remote_data_package(
 
 
 def load_latest_success(root: str | Path) -> dict:
-    pointer_path = Path(root) / "latest_success.json"
+    root = Path(root).resolve()
+    pointer_path = root / "latest_success.json"
     if not pointer_path.is_file():
         raise RemoteDataPackageError("尚无可回退的最近成功数据包")
     try:
@@ -367,7 +378,14 @@ def load_latest_success(root: str | Path) -> dict:
         raise RemoteDataPackageError("最近成功数据包指针损坏") from error
     if pointer.get("schema_version") != POINTER_SCHEMA_VERSION:
         raise RemoteDataPackageError("最近成功数据包指针版本不受支持")
-    package_path = Path(str(pointer.get("package_path") or ""))
+    package_path = Path(str(pointer.get("package_path") or "")).resolve()
+    packages_root = (root / "packages").resolve()
+    try:
+        relative_package_path = package_path.relative_to(packages_root)
+    except ValueError as error:
+        raise RemoteDataPackageError("最近成功数据包 package_path 越出配置根目录") from error
+    if len(relative_package_path.parts) != 1 or relative_package_path.name != pointer.get("package_id"):
+        raise RemoteDataPackageError("最近成功数据包 package_path 与 package_id 不一致")
     manifest_path = package_path / "manifest.json"
     if not manifest_path.is_file():
         raise RemoteDataPackageError("最近成功数据包缺少 manifest")
@@ -398,7 +416,7 @@ def load_latest_success(root: str | Path) -> dict:
         if path.name != expected_name:
             raise RemoteDataPackageError(f"最近成功数据包 {role} 文件名非法")
         item = manifest_files.get(role) or {}
-        expected_sha256 = str(item.get("sha256") or "").lower()
+        expected_sha256 = str(item.get("sha256") or "")
         try:
             expected_size = int(item.get("size_bytes"))
         except (TypeError, ValueError) as error:

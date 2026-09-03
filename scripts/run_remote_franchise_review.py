@@ -9,7 +9,14 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-from requests.exceptions import SSLError
+from requests.exceptions import (
+    ChunkedEncodingError,
+    ConnectionError as RequestsConnectionError,
+    ConnectTimeout,
+    HTTPError,
+    ReadTimeout,
+    SSLError,
+)
 
 from scripts.build_franchise_operating_review import WORKFORCE_CONTRACT, build, run_auto_backfill
 from services.dashboard_analysis_export import publish_dashboard_analysis_export
@@ -36,15 +43,29 @@ def safe_transport_error(error):
     return re.sub(r"(https?://[^\s?]+)\?[^\s]+", r"\1?<redacted>", str(error))[:500]
 
 
+def is_transient_upstream_error(error):
+    if isinstance(error, SSLError):
+        return False
+    if isinstance(error, (ConnectTimeout, ReadTimeout, RequestsConnectionError, ChunkedEncodingError)):
+        return True
+    if isinstance(error, HTTPError):
+        response = getattr(error, "response", None)
+        status_code = getattr(response, "status_code", None)
+        return status_code in {408, 429, 500, 502, 503, 504}
+    return False
+
+
 def acquire_package(manifest_url, input_root, token_file=None, sync_function=sync_remote_data_package):
     try:
         pointer = sync_function(manifest_url, input_root, token_file=token_file)
         return pointer, "fresh", None
     except (PackageIntegrityError, RemoteDataPackageError):
         raise
-    except SSLError as error:
-        raise RemoteDataPackageError("远程数据包 TLS 校验失败，已拒绝使用旧缓存掩盖") from error
     except Exception as error:
+        if not is_transient_upstream_error(error):
+            if isinstance(error, SSLError):
+                raise RemoteDataPackageError("远程数据包 TLS 校验失败，已拒绝使用旧缓存掩盖") from error
+            raise RemoteDataPackageError("远程数据包失败不是允许回退的瞬时上游故障") from error
         pointer = load_latest_success(input_root)
         return pointer, "fallback_last_success", safe_transport_error(error)
 

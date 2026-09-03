@@ -1,104 +1,107 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "site-dashboard-analysis-export/v0.1",
-  "title": "LANN Site to Dashboard analysis export manifest",
+  "title": "LANN Site to Dashboard immutable analysis export manifest",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "published_at",
-    "source_run",
-    "layout",
-    "files",
-    "summary",
-    "latest_success_sha256",
-    "dashboard_write_allowed"
-  ],
+  "required": ["schema_version", "published_at", "source_run", "projection_versions", "layout", "files", "summary", "latest_success_sha256", "dashboard_write_allowed"],
   "properties": {
-    "schema_version": { "const": "site-dashboard-analysis-export/v0.1" },
-    "published_at": { "type": "string", "format": "date-time" },
+    "schema_version": {"const": "site-dashboard-analysis-export/v0.1"},
+    "published_at": {"type": "string", "format": "date-time"},
     "source_run": {
-      "type": "object",
-      "additionalProperties": false,
+      "type": "object", "additionalProperties": false,
       "required": ["run_month", "run_id", "run_schema_version"],
       "properties": {
-        "run_month": { "type": "string", "pattern": "^20[0-9]{2}-(0[1-9]|1[0-2])$" },
-        "run_id": { "type": "string", "pattern": "^[0-9a-f]{8,64}$" },
-        "run_schema_version": { "const": "franchise-operating-run/v0.1" }
+        "run_month": {"type": "string", "pattern": "^20[0-9]{2}-(0[1-9]|1[0-2])$"},
+        "run_id": {"type": "string", "pattern": "^[0-9a-f]{8,64}$"},
+        "run_schema_version": {"const": "franchise-operating-run/v0.1"}
+      }
+    },
+    "projection_versions": {
+      "type": "object", "additionalProperties": false,
+      "required": ["manifest", "business_review", "analysis_catalog", "review", "summary_csv"],
+      "properties": {
+        "manifest": {"const": "site-dashboard-run-manifest-dto/v0.1"},
+        "business_review": {"const": "site-dashboard-business-review-dto/v0.1"},
+        "analysis_catalog": {"const": "site-dashboard-analysis-catalog-dto/v0.1"},
+        "review": {"const": "site-dashboard-review-dto/v0.1"},
+        "summary_csv": {"const": "site-dashboard-performance-summary-dto/v0.1"}
       }
     },
     "layout": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["review_root", "latest_success", "run_path", "required_run_files"],
+      "type": "object", "additionalProperties": false,
+      "required": ["review_root", "latest_success", "run_path", "export_manifest", "required_run_files"],
       "properties": {
-        "review_root": { "const": "franchise_operating_reviews" },
-        "latest_success": { "const": "franchise_operating_reviews/latest_success.json" },
-        "run_path": { "type": "string" },
+        "review_root": {"const": "franchise_operating_reviews"},
+        "latest_success": {"const": "franchise_operating_reviews/latest_success.json"},
+        "run_path": {"type": "string", "pattern": "^franchise_operating_reviews/20[0-9]{2}-(0[1-9]|1[0-2])/[0-9a-f]{8,64}$"},
+        "export_manifest": {"const": "export_manifest.json"},
         "required_run_files": {
-          "type": "array",
-          "minItems": 4,
-          "maxItems": 4,
-          "uniqueItems": true,
-          "items": {
-            "enum": ["analysis_catalog.json", "business_review.json", "manifest.json", "review.json"]
-          }
+          "oneOf": [
+            {"const": ["analysis_catalog.json", "business_review.json", "manifest.json", "review.json"]},
+            {"const": ["analysis_catalog.json", "business_review.json", "manifest.json", "review.json", "site_performance_summary_bi_feishu_rent.csv"]}
+          ]
         }
       }
     },
     "files": {
-      "type": "array",
-      "minItems": 4,
-      "maxItems": 4,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["path", "sha256", "bytes"],
-        "properties": {
-          "path": { "type": "string" },
-          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-          "bytes": { "type": "integer", "minimum": 1 }
-        }
-      }
+      "type": "array", "minItems": 4, "maxItems": 4,
+      "prefixItems": [
+        {"$ref": "#/$defs/analysis_catalog_file"},
+        {"$ref": "#/$defs/business_review_file"},
+        {"$ref": "#/$defs/manifest_file"},
+        {"$ref": "#/$defs/review_file"}
+      ],
+      "items": false
     },
     "summary": {
       "oneOf": [
         {
-          "type": "object",
-          "additionalProperties": false,
+          "type": "object", "additionalProperties": false,
           "required": ["status", "path", "sha256", "bytes"],
           "properties": {
-            "status": { "const": "published" },
-            "path": { "const": "site_performance_summary_bi_feishu_rent.csv" },
-            "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-            "bytes": { "type": "integer", "minimum": 1 }
+            "status": {"const": "published"},
+            "path": {"const": "site_performance_summary_bi_feishu_rent.csv"},
+            "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "bytes": {"type": "integer", "minimum": 1}
           }
         },
         {
-          "type": "object",
-          "additionalProperties": false,
+          "type": "object", "additionalProperties": false,
           "required": ["status", "reason"],
-          "properties": {
-            "status": { "const": "not_published" },
-            "reason": { "const": "source_missing" }
-          }
+          "properties": {"status": {"const": "not_published"}, "reason": {"const": "source_missing"}}
         }
       ]
     },
-    "latest_success_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "latest_success_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "source_data": {
       "type": "object",
       "additionalProperties": false,
       "required": ["sync_status", "stale", "package_id", "data_period", "generated_at", "manifest_sha256"],
       "properties": {
-        "sync_status": { "enum": ["fresh", "fallback_last_success"] },
-        "stale": { "type": "boolean" },
-        "package_id": { "type": "string", "minLength": 1 },
-        "data_period": { "type": "string", "pattern": "^20[0-9]{2}-(0[1-9]|1[0-2])$" },
-        "generated_at": { "type": "string", "format": "date-time" },
-        "manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        "sync_status": {"enum": ["fresh", "fallback_last_success"]},
+        "stale": {"type": "boolean"},
+        "package_id": {"type": "string", "minLength": 1, "pattern": "^[^/\\\\]+$"},
+        "data_period": {"type": "string", "pattern": "^20[0-9]{2}-(0[1-9]|1[0-2])$"},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
       }
     },
-    "dashboard_write_allowed": { "const": false }
+    "dashboard_write_allowed": {"const": false}
+  },
+  "$defs": {
+    "file_base": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "analysis_catalog_file": {"allOf": [{"$ref": "#/$defs/file_base"}, {"properties": {"path": {"const": "analysis_catalog.json"}}}]},
+    "business_review_file": {"allOf": [{"$ref": "#/$defs/file_base"}, {"properties": {"path": {"const": "business_review.json"}}}]},
+    "manifest_file": {"allOf": [{"$ref": "#/$defs/file_base"}, {"properties": {"path": {"const": "manifest.json"}}}]},
+    "review_file": {"allOf": [{"$ref": "#/$defs/file_base"}, {"properties": {"path": {"const": "review.json"}}}]}
   }
 }

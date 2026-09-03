@@ -17,8 +17,8 @@ class RemoteFranchiseReviewTests(unittest.TestCase):
             workforce = Path(temp) / "workforce.csv"
             operating.write_text("a", encoding="utf-8")
             workforce.write_text("b", encoding="utf-8")
-            package_path = Path(temp) / "package"
-            package_path.mkdir()
+            package_path = Path(temp) / "packages" / "last-good"
+            package_path.mkdir(parents=True)
             cached_operating = package_path / "site_performance_monthly_bi_feishu_rent.csv"
             cached_workforce = package_path / "store_workforce_monthly.csv"
             cached_operating.write_bytes(operating.read_bytes())
@@ -61,7 +61,7 @@ class RemoteFranchiseReviewTests(unittest.TestCase):
             )
 
             def fail_sync(*args, **kwargs):
-                raise RuntimeError("temporary unavailable")
+                raise requests.exceptions.ConnectionError("temporary unavailable")
 
             pointer, status, error = acquire_package(
                 "https://data.example.test/manifest.json",
@@ -133,6 +133,18 @@ class RemoteFranchiseReviewTests(unittest.TestCase):
                 raise requests.exceptions.SSLError("certificate verify failed")
 
             with self.assertRaisesRegex(Exception, "TLS 校验失败"):
+                acquire_package(
+                    "https://data.example.test/manifest.json",
+                    temp,
+                    sync_function=fail_sync,
+                )
+
+    def test_local_permission_error_does_not_fallback(self):
+        with tempfile.TemporaryDirectory() as temp:
+            def fail_sync(*args, **kwargs):
+                raise PermissionError("local cache denied")
+
+            with self.assertRaisesRegex(Exception, "不是允许回退的瞬时上游故障"):
                 acquire_package(
                     "https://data.example.test/manifest.json",
                     temp,

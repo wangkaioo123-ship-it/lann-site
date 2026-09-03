@@ -113,9 +113,19 @@ class RemoteDataPackageTests(unittest.TestCase):
         manifest["data_period"] = "2026-13"
         with self.assertRaisesRegex(RemoteDataPackageError, "YYYY-MM"):
             validate_manifest(manifest, manifest_url)
+        manifest["data_period"] = "2026-7"
+        with self.assertRaisesRegex(RemoteDataPackageError, "YYYY-MM"):
+            validate_manifest(manifest, manifest_url)
         manifest["data_period"] = "2026-07"
         manifest["files"][0]["size_bytes"] = 1.5
         with self.assertRaisesRegex(RemoteDataPackageError, "必须是整数"):
+            validate_manifest(manifest, manifest_url)
+
+    def test_manifest_rejects_uppercase_sha256_instead_of_normalizing_it(self):
+        manifest_url, responses = build_fixture()
+        manifest = json.loads(responses[manifest_url].content)
+        manifest["files"][0]["sha256"] = "A" * 64
+        with self.assertRaisesRegex(RemoteDataPackageError, "sha256 非法"):
             validate_manifest(manifest, manifest_url)
 
     def test_failed_new_package_does_not_replace_last_success(self):
@@ -202,6 +212,17 @@ class RemoteDataPackageTests(unittest.TestCase):
             pointer = sync_remote_data_package(manifest_url, temp, session=FakeSession(responses))
             Path(pointer["role_paths"]["operating_monthly"]).write_bytes(b"tampered")
             with self.assertRaisesRegex(RemoteDataPackageError, "校验失败"):
+                load_latest_success(temp)
+
+    def test_latest_success_rejects_package_path_outside_configured_root(self):
+        manifest_url, responses = build_fixture()
+        with tempfile.TemporaryDirectory() as temp, tempfile.TemporaryDirectory() as outside:
+            sync_remote_data_package(manifest_url, temp, session=FakeSession(responses))
+            pointer_path = Path(temp) / "latest_success.json"
+            pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+            pointer["package_path"] = outside
+            pointer_path.write_text(json.dumps(pointer), encoding="utf-8")
+            with self.assertRaisesRegex(RemoteDataPackageError, "package_path 越出"):
                 load_latest_success(temp)
 
     def test_manifest_rejects_missing_required_role(self):

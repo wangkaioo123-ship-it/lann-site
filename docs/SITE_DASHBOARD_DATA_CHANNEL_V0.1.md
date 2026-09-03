@@ -50,18 +50,20 @@ python -m scripts.publish_dashboard_analysis_export
 
 ```text
 dashboard-v0.1/
-├── site_performance_summary_bi_feishu_rent.csv       # 可选
 └── franchise_operating_reviews/
-    ├── export_manifest.json                           # site-dashboard-analysis-export/v0.1
-    ├── latest_success.json                            # 最后原子提升
+    ├── latest_success.json                            # 唯一可变文件，最后原子提升
     └── <YYYY-MM>/<run_id>/
         ├── manifest.json
         ├── business_review.json
         ├── analysis_catalog.json
-        └── review.json
+        ├── review.json
+        ├── site_performance_summary_bi_feishu_rent.csv # 可选，与 run 一起冻结
+        └── export_manifest.json                       # site-dashboard-analysis-export/v0.1
 ```
 
-发布前 Site 会检查月份/run_id、各 schema、经营和人员 Gate、`dashboard_write_allowed=false`、专业分析目录身份。相同 run_id 内容变化时拒绝覆盖；失败不移动导出 `latest_success.json`。`export_manifest.json` 记录四个必要文件的 SHA-256 和字节数。正式 schema：`ai/schemas/site_dashboard_analysis_export.v0.1.schema.json`。
+发布前 Site 会检查月份/run_id、各 schema、经营和人员 Gate、`dashboard_write_allowed=false`、专业分析目录身份，并按 Dashboard 现行消费字段生成四份版本化最小 DTO。JSON 任意额外字段会被拒绝；经营汇总 CSV 必须严格匹配 36 列白名单，缺列、增列、重复列或行列数异常都会失败。源 manifest 中的文件路径、列映射等内部信息不会进入导出。
+
+四份 DTO、可选经营汇总和 `export_manifest.json` 先整体写入不可变 `<month>/<run_id>/`；全部成功后才原子提升 `latest_success.json`。相同 run_id 的任一内容或文件集合变化均拒绝覆盖，失败时上一指针、上一汇总和上一 manifest 仍指向同一个完整快照。`export_manifest.json` 记录四个 JSON 与可选汇总的 SHA-256、字节数及投影版本。正式 schema：`ai/schemas/site_dashboard_analysis_export.v0.1.schema.json`。
 
 Dashboard PR #5 的 `SITE_ANALYSIS_SOURCE` 应指向上述 `dashboard-v0.1` 根目录，而不是仓库或 `data/staging`。
 
