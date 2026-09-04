@@ -2,6 +2,27 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-09-04 — 阿里云分析导出 Gate 与来源身份 QA 修复
+
+- 经营与人员 Gate 的 `ready` 收紧为仅接受真实布尔值 `true`，拒绝字符串、数字、空值和 `false`，避免类型真值绕过发布门禁。
+- 阿里云集成导出的 `source_data` 改为 manifest 与最新成功指针共同必填，必须保留并一致传递 Data package_id、数据期间、生成时间、manifest SHA 和 fresh/stale 状态；缺失来源身份的旧产物不再发布 ready。
+- 本轮仅修改 Site 隔离分支，不触碰脏 master，不 push、不 merge、不 deploy。
+
+## 2026-09-03 阿里云 Data → Site → Dashboard 完整链路整合
+
+- 类型：迁移整合/只读发布
+- 内容：合并远程 Data HTTPS 包与既有 Dashboard 最小快照导出。Site 每次远程经营评审 Gate 通过后，自动将同一 run 原子发布到 `/var/lib/lann-site/output/dashboard-v0.1`；发布失败不把本轮标记为成功。Dashboard 只通过同机共享只读组消费该快照，不再需要 Hanson 主机 SSH 导出身份、阿里云私钥或跨机 rsync。
+- 业务边界：Data、Site、Dashboard 继续保持唯一事实源和最小权限；本轮不修改分析规则、业务字段或正式数据。
+- 独立审查修正：统一阿里云 release/venv 布局并补齐系统身份、目录和 token 权限；Data 回退状态随只读指针传给 Dashboard；TLS 失败不回退，下载错误脱敏；评审 JSON 改为原子写入。
+
+## 2026-09-02 阿里云远程只读数据包与加盟经营评审入口
+
+- 类型：架构/数据契约/部署
+- 内容：新增 Data → Site HTTPS 只读版本包契约、原子下载与 SHA-256 校验、最近成功包回退、远程加盟经营评审入口，以及适配 2 核 2G 阿里云服务器的 systemd oneshot/timer 和资源上限。正式远程入口不执行仓库遗留的旧 BI 直连批处理；拒绝下载重定向，跨域文件不携带数据出口 Bearer Token；同 ID 冲突、内容校验失败和回滚信号硬失败，网络回退明确标记陈旧。
+- 改动文件：`services/remote_data_package.py`、`scripts/run_remote_franchise_review.py`、`tests/test_remote_data_package.py`、`tests/test_remote_franchise_review.py`、`docs/REMOTE_DATA_PACKAGE_V1.md`、`deploy/*`、`README.md`、`DECISIONS.md`、`DEVELOPMENT_LOG.md`
+- commit：未提交
+- 验证方法：新增专项 16 项通过，覆盖只读下载、原子落盘、回滚/冲突/重定向拒绝、陈旧数据标记及 401/404 硬失败；全量 168 项 unittest、`compileall` 与 `git diff --check` 通过。Kimi 第一轮提出的凭证重定向、完整性降级和旧定时冲突阻断项均已修复；第二轮确认 Blocker/High 清零，并按复验意见将 HTTP 4xx 收紧为不可回退错误。
+
 ## 2026-08-29 Site 输入来源白名单 QA 修复
 
 - 类型：QA 阻断修复 / 输入契约白名单
@@ -87,6 +108,14 @@
 ```
 
 ---
+
+## 2026-09-02：Site → 阿里云 Dashboard 最小只读导出通道
+
+- 类型：功能 / 数据契约 / 运维边界
+- 内容：确认 lann-data 现役正式出口仅为 Hanson 服务器本地脱敏文件/视图，不存在可供阿里云直接消费的正式 HTTP/API/对象存储接口。新增 Site 独立导出目录与原子发布器，只发布最新成功 run 的 manifest、全店经营评审、专业分析目录、候选评审及可选经营汇总；相同 run 内容变化拒绝覆盖，失败不移动最新成功指针。服务器批处理成功后自动发布，供 Dashboard PR #5 通过无 Shell、无写权限、限定目录的只读 rsync 身份拉取。
+- 改动文件：`services/dashboard_analysis_export.py`、`scripts/publish_dashboard_analysis_export.py`、`ai/schemas/site_dashboard_analysis_export.v0.1.schema.json`、`docs/SITE_DASHBOARD_DATA_CHANNEL_V0.1.md`、`tests/test_dashboard_analysis_export.py`、`scripts/run_server_batch.py`、`README.md`、`docs/server_batch.md`、`DEVELOPMENT_LOG.md`
+- commit：本提交
+- 验证方法：导出专项与批处理顺序测试 8 项通过；全量 unittest 159 项通过；compileall、JSON schema 解析与 `git diff --check` 通过；不连接或修改生产。
 
 ## 2026-08-18 加盟经营异常月度核查与人员证据增强 V0.1
 
@@ -506,3 +535,16 @@
 - 内容：Site 在领取资料时校验事项编号、事项类型、业务域和业务阶段的一致性，并在处理结果中保留事项编号与业务阶段。远程分析子进程失败时捕获实际标准错误或输出，回传真实原因，不再只显示一整段执行命令。
 - 兼容性：没有新增事项字段的历史 `v0.1` 资料包仍可处理。
 - 验证方法：`python -m unittest tests.test_remote_site_handoff -v` 6 项通过，`compileall` 通过。全量测试其余 74 项通过，4 项因当前运行环境缺少既有 `requests` 依赖而无法导入，与本次改动无关。
+# 2026-09-03 Site→阿里云 Dashboard 导出严格脱敏与原子快照修复
+
+- 类型：安全修复 / 跨系统只读契约
+- 内容：依据 Dashboard 现行 consumer 反向收口 JSON 与 CSV 白名单；四份 JSON 改为显式最小 DTO，拒绝额外、缺失字段，经营汇总固定为 36 列且拒绝增列、缺列、重复列。汇总 CSV 与四份 JSON、export manifest 统一进入不可变月/run 目录，最后只原子切换 latest_success；同 run 内容变化或指针写失败均保留上一完整快照。
+- 边界：继续保持 `dashboard_write_allowed=false`、经营与人员 Gate、SHA-256/bytes；不修改 Dashboard、Data、服务器，不推送、不部署。Kimi 因私有源码策略未能参与本轮，按既定规则由 Codex 自验补位。
+- 验证：`python -m unittest tests.test_dashboard_analysis_export`（15项）通过；另行执行全量测试、编译、schema 与 diff check。
+## 2026-09-03 — PR #7 统一迁移基线安全收口
+
+- 以精确候选 `d6acf48af07401ef24e59dbb3b6259aff86a20be` 创建隔离分支，确认长期通路为 Data 版本化 HTTPS 只读数据包进入阿里云 Site、Dashboard 同机只读最小快照；V0.1 跨服务器 SSH/rsync 方案仅保留为已废止历史说明。
+- 重放 Dashboard 导出安全保护：四份严格最小 DTO、经营汇总固定 36 列、run 级不可变原子快照、失败不提升指针；指针写入失败时撤销新建 run，保留上一完整快照。
+- 保留并严格校验 Data 来源审计信息（package_id、数据期间、生成时间、manifest SHA、fresh/stale）。
+- 加固 Data 包读取：严格 `YYYY-MM`、仅接受小写 SHA-256、最近成功包路径限制在配置根目录；仅明确瞬时上游故障允许回退，本地权限、TLS、认证/4xx、契约和完整性错误硬失败。
+- 未 push、未 merge、未 deploy；当前脏 master 工作区未触碰。

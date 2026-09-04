@@ -33,6 +33,7 @@ python -m scripts.run_server_batch
 - 完整批处理会在重建后自动执行加盟/合资门店经营异常月度核查，读取全部可覆盖门店，结果只写 Site 本地 shadow/staging，不写 Dashboard。
 - 月度核查从2026-06自动补跑，每次只推进最早一个尚无成功报告的完整月。Gate失败时保留失败manifest与`auto_backfill_status.json`并让批处理失败，下一次timer继续重试；全部月份成功后恢复最新完整月常规幂等运行。
 - 成功月份同时生成全店业务评审与`data/staging/franchise_operating_reviews/business_review.html`静态查看页。页面按月切换并在0候选时继续展示全部参与计算门店；它不新增服务、不调用Dashboard，也不改变候选阈值。
+- 月度评审成功后，批处理把最新成功 run 的四个必要 JSON 与可选经营汇总发布到 `data/exports/dashboard-v0.1`。异机 Dashboard 只读拉取该独立目录，不读取仓库、`data/staging` 或 lann-data 原始出口；发布失败不移动跨系统最新成功指针。
 - 展示schema升级后，旧成功月份若缺少当前全店评审产物，会由既有补跑机制按月份重新生成一次；旧run保留，不覆盖。
 - 建议服务器每日在门店全部结算后的低峰时段运行；即使当天只完成部分门店，趋势截止日也不会前移到不完整日。
 - 生产安排频率：每天北京时间07:30；输出当前只由lann-site本地分析消费，不写飞书或dashboard。是否已经形成指定月份成功产物必须读取 manifest/Gate 验证，不能仅根据部署版本或调度安排推断。

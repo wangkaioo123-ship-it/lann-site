@@ -25,6 +25,7 @@ COMMANDS = [
         "--auto-backfill-from",
         "2026-06",
     ],
+    [sys.executable, "-m", "scripts.publish_dashboard_analysis_export"],
 ]
 
 

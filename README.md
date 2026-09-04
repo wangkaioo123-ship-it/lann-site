@@ -9,6 +9,12 @@ LANN 后台专业分析服务。Site 只读使用获批数据，当前承载选�
 - 加盟经营评审的正式人员输入来自 lann-data 脱敏 canonical 月度聚合；经营评审消费已准备好的门店月度正式输入。旧 Metabase/BI 直读脚本仅保留为历史诊断与迁移兼容，不是 Dashboard 应依赖的数据契约。
 - 生产安排为北京时间 07:30 自然运行，输出保存在 Site 自身 `data/staging/`。当前最小运维缺口是 Site 结果只读查看/下载能力，不是 lann-data 数据接口。
 
+## 阿里云独立运行
+
+Dashboard 与 Site 回迁 LANN 阿里云后，Site 不再读取 Hanson 服务器本地目录，也不通过 VPN、SSH 或远程执行取数。Data 按 `docs/REMOTE_DATA_PACKAGE_V1.md` 发布 HTTPS 只读版本包；Site 使用 `scripts.run_remote_franchise_review` 下载、校验、缓存并运行加盟经营评审。远端失败时保留最近成功包并明确标记数据未更新，不回写 Data。
+
+阿里云定时单元位于 `deploy/lann-site-remote-review.service` 与 `deploy/lann-site-remote-review.timer`。该入口只运行正式远程月度评审，不执行 `run_server_batch` 中遗留的旧 BI 直连兼容步骤。
+
 ## 环境
 
 ```powershell
@@ -71,6 +77,8 @@ OCR 合同脚本需要额外安装：
 每次成功运行还生成全店只读业务评审。`data/staging/franchise_operating_reviews/business_review.html`可在已成功月份间切换；即使候选数为0，也会按营收直接变化率展示全部参与计算门店、目标月经营/人员事实、现行门槛距离、可能解释与证据缺口。`business_review.json` 同时按 `franchise-store-three-month-operating/v0.1` 输出每店最近3个完整自然月的营业额、已知租金与物业费合计、按两者金额重算的租售比、来源和完整性；上游租售比仅用于一致性诊断，没有权威拆分的纯租金、物业费、管理费保持 `null/unknown`，不计算利润。该页面不使用综合风险评分，不写Dashboard，也不会用固定9家历史校准名单替代正常全量扫描。
 
 同一 run 还生成 `analysis_catalog.json`：按 `professional-analysis-catalog/v0.1` 为每家门店提供稳定 `analysis_id`、canonical 门店、期间、规范化完整输入指纹、规则版本、可信度、事实/统计差异/代理指标/假设/缺口、结论和建议。`analysis_id` 绑定必要输入的 SHA-256、数据版本和来源提交，输入变化不会沿用旧身份。Dashboard 后续按 `professional-analysis-feedback/v0.1` 导出人工评审、动作和结果，Site 可生成只读校准质量汇总；详见 `docs/PROFESSIONAL_ANALYSIS_FEEDBACK_V0.1.md`。
+
+成功运行最后会将当前可消费的最小 bundle 原子发布到 `/var/lib/lann-site/output/dashboard-v0.1`，供同机 Dashboard 通过 `lann_site_readers` 只读组同步到自身镜像。该目录不包含 lann-data 原始文件、Site 仓库或其他 staging 数据；当前通道契约见 `docs/SITE_DASHBOARD_DATA_CHANNEL_V0.2.md`。
 
 只读检查 Hanson BI 数据新鲜度与对账：
 
