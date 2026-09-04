@@ -27,6 +27,8 @@ LANN 阿里云 / app_lann_dashboard
 
 - Site 的 `scripts.run_remote_franchise_review` 在 Gate 通过后调用同一不可变导出器，发布 `dashboard-v0.1`。
 - 导出器只发布版本化最小 DTO；经营汇总严格限制为固定 36 列，源文件中的路径、内部字段及未批准信息不会原样透传。
+- 每个可供 Dashboard 读取的快照必须同时携带 Data 包来源审计信息；`source_data` 不允许缺失或为空，导出 manifest 与最新成功指针中的内容必须一致。
+- 经营与人员 Gate 的 `ready` 只接受 JSON 布尔值 `true`；字符串、数字、空值和 `false` 均不得发布为 ready。
 - 四份 DTO、可选汇总和导出 manifest 先写入不可变 `<month>/<run_id>` 目录；全部完成后才原子提升唯一可变的 `latest_success.json`。指针提升失败会撤销本次新 run，上一完整快照保持可用。
 - 分析失败或导出校验失败时不提升导出指针；Dashboard 保留上一成功镜像并标记 stale。
 - 相同 run_id 内容变化、月份回滚、HTTP 重定向、4xx 配置/权限错误均硬失败。

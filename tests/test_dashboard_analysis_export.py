@@ -14,13 +14,29 @@ from services.dashboard_analysis_export import (
     SUMMARY_COLUMNS,
     SUMMARY_FILE_NAME,
     DashboardAnalysisExportError,
-    publish_dashboard_analysis_export,
+    publish_dashboard_analysis_export as _publish_dashboard_analysis_export,
 )
 from services.professional_analysis import build_analysis_catalog
 
 
 RUN_ID = "0123456789abcdef0123"
 MONTH = "2026-07"
+
+
+def valid_source_data():
+    return {
+        "sync_status": "fresh",
+        "stale": False,
+        "package_id": "package-2026-07-v1",
+        "data_period": MONTH,
+        "generated_at": "2026-09-01T08:00:00+08:00",
+        "manifest_sha256": "f" * 64,
+    }
+
+
+def publish_dashboard_analysis_export(*args, **kwargs):
+    kwargs.setdefault("source_data", valid_source_data())
+    return _publish_dashboard_analysis_export(*args, **kwargs)
 
 
 def write_json(path: Path, payload: dict) -> None:
@@ -151,6 +167,48 @@ def workforce_gate():
 
 
 class DashboardAnalysisExportTests(unittest.TestCase):
+    def test_requires_source_data_for_integrated_ready_export(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, summary = valid_source(root)
+            with self.assertRaisesRegex(DashboardAnalysisExportError, "source_data"):
+                _publish_dashboard_analysis_export(source, root / "export", summary)
+            self.assertFalse((root / "export" / "franchise_operating_reviews" / "latest_success.json").exists())
+
+    def test_rejects_non_boolean_or_false_ready_gates(self):
+        invalid_values = ("true", "false", 1, 0, None, False)
+        for gate_name in ("operating", "workforce"):
+            for invalid in invalid_values:
+                with self.subTest(gate=gate_name, value=invalid), tempfile.TemporaryDirectory() as temp:
+                    root = Path(temp)
+                    source, summary = valid_source(root)
+                    business_path = source / MONTH / RUN_ID / "business_review.json"
+                    business = json.loads(business_path.read_text(encoding="utf-8"))
+                    business["data_gate"][gate_name]["ready"] = invalid
+                    write_json(business_path, business)
+                    with self.assertRaisesRegex(DashboardAnalysisExportError, "ready"):
+                        publish_dashboard_analysis_export(source, root / "export", summary)
+
+    def test_source_data_is_identical_in_manifest_and_pointer(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, summary = valid_source(root)
+            source_data = valid_source_data()
+            manifest = publish_dashboard_analysis_export(
+                source, root / "export", summary, source_data=source_data
+            )
+            pointer = json.loads(
+                (root / "export" / "franchise_operating_reviews" / "latest_success.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(manifest["source_data"], pointer["source_data"])
+
+    def test_export_schema_requires_source_data(self):
+        schema = json.loads(
+            (Path(__file__).parents[1] / "ai" / "schemas" / "site_dashboard_analysis_export.v0.1.schema.json").read_text(encoding="utf-8")
+        )
+        self.assertIn("source_data", schema["required"])
+        self.assertFalse(schema["properties"]["source_data"].get("nullable", False))
+
     def test_publishes_only_allowlisted_run_files_and_normalized_pointer(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

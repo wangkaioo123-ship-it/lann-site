@@ -2,6 +2,12 @@
 
 按时间倒序记录每次开发/修复内容，每次完成后在顶部追加。
 
+## 2026-09-04 — 阿里云分析导出 Gate 与来源身份 QA 修复
+
+- 经营与人员 Gate 的 `ready` 收紧为仅接受真实布尔值 `true`，拒绝字符串、数字、空值和 `false`，避免类型真值绕过发布门禁。
+- 阿里云集成导出的 `source_data` 改为 manifest 与最新成功指针共同必填，必须保留并一致传递 Data package_id、数据期间、生成时间、manifest SHA 和 fresh/stale 状态；缺失来源身份的旧产物不再发布 ready。
+- 本轮仅修改 Site 隔离分支，不触碰脏 master，不 push、不 merge、不 deploy。
+
 ## 2026-09-03 阿里云 Data → Site → Dashboard 完整链路整合
 
 - 类型：迁移整合/只读发布

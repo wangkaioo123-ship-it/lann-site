@@ -126,11 +126,15 @@ PERSONNEL_MISSING_KEYS = ("available", "target_month", "evidence_role", "missing
 
 def _gate(value, label):
     _exact(value, OPERATING_GATE_KEYS, label)
+    if type(value["ready"]) is not bool or value["ready"] is not True:
+        raise DashboardAnalysisExportError(f"{label}.ready 必须是布尔值 true")
     return deepcopy(value)
 
 
 def _workforce_gate(value, label):
     _exact(value, WORKFORCE_GATE_KEYS, label)
+    if type(value["ready"]) is not bool or value["ready"] is not True:
+        raise DashboardAnalysisExportError(f"{label}.ready 必须是布尔值 true")
     return deepcopy(value)
 
 
@@ -159,7 +163,7 @@ def _differences(value, label):
 
 def _normalize_source_data(source_data):
     if source_data is None:
-        return None
+        raise DashboardAnalysisExportError("阿里云集成导出必须包含 source_data")
     _exact(
         source_data,
         ("sync_status", "stale", "package_id", "data_period", "generated_at", "manifest_sha256"),
@@ -350,8 +354,7 @@ def _manifest_payload(bundle, contents, summary, pointer, published_at, source_d
         "summary": ({"status": "published", "path": SUMMARY_FILE_NAME, "sha256": _hash_bytes(summary), "bytes": len(summary)} if summary else {"status": "not_published", "reason": "source_missing"}),
         "latest_success_sha256": _hash_bytes(pointer), "dashboard_write_allowed": False,
     }
-    if source_data is not None:
-        payload["source_data"] = deepcopy(source_data)
+    payload["source_data"] = deepcopy(source_data)
     return payload
 
 
@@ -382,8 +385,7 @@ def publish_dashboard_analysis_export(
             if path.is_symlink() or not path.is_file(): raise DashboardAnalysisExportError("汇总不是普通文件")
             summary = _summary_bytes(path)
     pointer_payload = {"schema_version": POINTER_SCHEMA_VERSION, "run_month": bundle["run_month"], "run_id": bundle["run_id"], "status": "ready_for_business_review", "export_manifest": EXPORT_MANIFEST_FILE_NAME, "dashboard_write_allowed": False}
-    if normalized_source_data is not None:
-        pointer_payload["source_data"] = deepcopy(normalized_source_data)
+    pointer_payload["source_data"] = deepcopy(normalized_source_data)
     pointer = _json_bytes(pointer_payload)
     review_root = export_root / "franchise_operating_reviews"; run_root = review_root / bundle["run_month"] / bundle["run_id"]
     created_run = False

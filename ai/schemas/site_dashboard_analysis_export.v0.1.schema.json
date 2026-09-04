@@ -4,7 +4,7 @@
   "title": "LANN Site to Dashboard immutable analysis export manifest",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "published_at", "source_run", "projection_versions", "layout", "files", "summary", "latest_success_sha256", "dashboard_write_allowed"],
+  "required": ["schema_version", "published_at", "source_run", "projection_versions", "layout", "files", "summary", "latest_success_sha256", "source_data", "dashboard_write_allowed"],
   "properties": {
     "schema_version": {"const": "site-dashboard-analysis-export/v0.1"},
     "published_at": {"type": "string", "format": "date-time"},
